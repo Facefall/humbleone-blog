@@ -1,0 +1,11 @@
+inherit:
+  personal: []
+
+skills:
+  project: []
+
+mcp:
+  servers: []
+
+policies:
+  structure_lookup: codegraph
