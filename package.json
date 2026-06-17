@@ -15,7 +15,12 @@
     "dev": "vitepress dev",
     "build": "vitepress build",
     "serve": "vitepress preview",
-    "preview": "vitepress preview"
+    "preview": "vitepress preview",
+    "reader:dev": "pnpm --filter @humbleone/ai-reader-prototype dev",
+    "reader:build": "pnpm --filter @humbleone/ai-reader-prototype build",
+    "reader:typecheck": "pnpm --filter @humbleone/ai-reader-prototype typecheck",
+    "reader:storybook": "pnpm --filter @humbleone/ai-reader-prototype storybook",
+    "reader:build-storybook": "pnpm --filter @humbleone/ai-reader-prototype build-storybook"
   },
   "devDependencies": {
     "@shikijs/vitepress-twoslash": "^3.23.0",

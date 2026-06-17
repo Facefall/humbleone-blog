@@ -2,6 +2,12 @@
 node_modules
 .vitepress/dist
 .vitepress/cache
+.next
+storybook-static
+*.tsbuildinfo
+debug.log
+apps/ai-reader-prototype/.storybook-dev*.log
+apps/ai-reader-prototype/output/
 .DS_Store
 .vscode
 .codex/
