@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import type { RefObject } from 'react'
 import { isEditableTarget } from '../utils/readerUtils'
 
 type StandardReaderKeyboardActions = {
@@ -12,13 +11,11 @@ type StandardReaderKeyboardActions = {
 type UseStandardReaderKeyboardInput = {
   actions: StandardReaderKeyboardActions
   hasActiveFilters: boolean
-  searchInputRef: RefObject<HTMLInputElement | null>
 }
 
 export function useStandardReaderKeyboard({
   actions,
   hasActiveFilters,
-  searchInputRef,
 }: UseStandardReaderKeyboardInput) {
   const keyboardStateRef = useRef({
     hasActiveFilters,
@@ -36,13 +33,6 @@ export function useStandardReaderKeyboard({
     function onKeyDown(event: KeyboardEvent) {
       const editableTarget = isEditableTarget(event.target)
       const keyboardState = keyboardStateRef.current
-
-      if (event.key === '/' && !editableTarget) {
-        event.preventDefault()
-        searchInputRef.current?.focus()
-        searchInputRef.current?.select()
-        return
-      }
 
       if (editableTarget) {
         return
@@ -69,5 +59,5 @@ export function useStandardReaderKeyboard({
     window.addEventListener('keydown', onKeyDown)
 
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [searchInputRef])
+  }, [])
 }

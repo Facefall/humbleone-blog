@@ -2,8 +2,6 @@ import type { DailyBrief, FeedItem } from '../lib/prototype-data'
 import { getSourceRegistryRecord } from '../services/sourceRegistry'
 import type { StandardArticle, StandardSource } from '../types/reader'
 
-export const categoryTabs = ['All', 'Breaking', 'AI Labs', 'Builders', 'Runtime', 'Community', 'Research']
-
 const articleImages = [
   '/standard-media/ai-grid.svg',
   '/standard-media/runtime-terminal.svg',
@@ -37,13 +35,15 @@ export function flattenArticles(brief: DailyBrief): StandardArticle[] {
 export function buildSources(brief: DailyBrief): StandardSource[] {
   return brief.sourceDesk.sourceSlips.map((source) => {
     const feedSourceId = source.id.replace(/^slip-/, 'source-')
+    const registry = getSourceRegistryRecord(feedSourceId)
 
     return {
       ...source,
       category: sourceCategoryLabels[source.sourceFamily ?? 'research'] ?? 'General',
       active: source.health !== 'failed' && source.state !== 'stale',
+      contentType: registry?.contentType ?? (source.sourceFamily === 'community' ? 'social' : 'article'),
       feedSourceId,
-      registry: getSourceRegistryRecord(feedSourceId),
+      registry,
     }
   })
 }
@@ -71,18 +71,6 @@ export function formatIssueDate(value: string) {
 
 export function normalizeFilter(value: string) {
   return value.trim().toLowerCase()
-}
-
-export function matchesCategory(article: StandardArticle, selectedCategory: string) {
-  if (selectedCategory === 'All') {
-    return true
-  }
-
-  if (selectedCategory === 'Breaking') {
-    return article.importance === 'breaking'
-  }
-
-  return article.standardCategory === selectedCategory.toUpperCase()
 }
 
 function mapCategory(item: FeedItem, sectionTitle: string) {

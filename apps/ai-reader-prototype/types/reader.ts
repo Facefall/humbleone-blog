@@ -1,5 +1,5 @@
 import type { FeedItem, SourceDeskItem } from '../lib/prototype-data'
-import type { SourceRegistryRecord } from '../services/sourceRegistry'
+import type { SourceContentType, SourceRegistryRecord } from '../services/sourceRegistry'
 
 export type StandardArticle = FeedItem & {
   sectionTitle: string
@@ -13,6 +13,7 @@ export type StandardArticle = FeedItem & {
 export type StandardSource = SourceDeskItem & {
   category: string
   active: boolean
+  contentType: SourceContentType
   feedSourceId: string
   registry?: SourceRegistryRecord
 }
@@ -27,7 +28,6 @@ export type StandardActionNotice = {
 
 export type StandardReaderInitialState = {
   selectedArticleId?: string
-  selectedCategory?: string
   selectedSourceId?: string | null
   searchQuery?: string
   articlePanelOpen?: boolean

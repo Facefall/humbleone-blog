@@ -27,7 +27,6 @@ export function StandardReaderPrototype({ brief, initialState, showThemeSwitch =
   useStandardReaderKeyboard({
     hasActiveFilters: readerState.hasActiveFilters,
     actions: readerState.actions,
-    searchInputRef,
   })
 
   function selectRailMode(mode: string, controls: ResizableReaderLayoutControls) {
@@ -72,17 +71,24 @@ export function StandardReaderPrototype({ brief, initialState, showThemeSwitch =
           <StandardFeedPanel
             articles={readerState.filteredArticles}
             selectedArticleId={readerState.selectedArticle.id}
-            selectedCategory={readerState.selectedCategory}
             selectedSourceId={readerState.selectedSourceId}
             articlePanelOpen={readerState.articlePanelOpen}
+            unreadCount={readerState.unreadCount}
+            readArticleIds={readerState.readArticleIds}
             savedArticleIds={readerState.savedArticleIds}
+            favoritedArticleIds={readerState.favoritedArticleIds}
+            showUnreadOnly={readerState.showUnreadOnly}
             actionNotice={readerState.actionNotice}
+            feedNotice={readerState.feedNotice}
             onSelectArticle={readerState.actions.selectArticle}
-            onSelectCategory={readerState.actions.setSelectedCategory}
             onClearSource={readerState.actions.clearSourceFilter}
             onRestoreArticlePanel={readerState.actions.openArticlePanel}
+            onFavoriteArticle={readerState.actions.toggleFavoriteArticle}
+            onMarkAllRead={readerState.actions.markAllRead}
+            onRefreshFeed={readerState.actions.refreshFeed}
             onSaveArticle={readerState.actions.toggleSaveArticle}
             onShareArticle={readerState.actions.shareArticle}
+            onToggleUnreadOnly={readerState.actions.setShowUnreadOnly}
           />
         }
         renderArticle={(controls) => (

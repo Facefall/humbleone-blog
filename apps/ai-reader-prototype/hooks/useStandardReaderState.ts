@@ -3,7 +3,7 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import type { DailyBrief } from '../lib/prototype-data'
 import { copyTextToClipboard } from '../services/browserClipboard'
-import { readSavedArticleIds, writeSavedArticleIds } from '../services/standardReaderStorage'
+import { readStandardArticleState, writeStandardArticleState } from '../services/standardReaderStorage'
 import type {
   StandardActionNotice,
   StandardFeedback,
@@ -14,8 +14,6 @@ import { resolveStandardReaderInitialState } from '../utils/readerInitialState'
 import { getRelatedStandardArticles } from '../utils/readerRelations'
 import { readStandardReaderInitialStateFromSearch, writeStandardReaderUrlState } from '../utils/readerUrlState'
 import { buildSources, flattenArticles, getSelectedArticle } from '../utils/standardReaderModel'
-
-const defaultCategory = 'All'
 
 export function useStandardReaderState(brief: DailyBrief, initialState?: StandardReaderInitialState) {
   const articles = useMemo(() => flattenArticles(brief), [brief])
@@ -34,9 +32,6 @@ export function useStandardReaderState(brief: DailyBrief, initialState?: Standar
   const [selectedArticleId, setSelectedArticleId] = useState(
     () => explicitInitialState.selectedArticleId ?? brief.selectedItemId,
   )
-  const [selectedCategory, setSelectedCategory] = useState(
-    () => explicitInitialState.selectedCategory ?? defaultCategory,
-  )
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(
     () => explicitInitialState.selectedSourceId ?? null,
   )
@@ -44,45 +39,59 @@ export function useStandardReaderState(brief: DailyBrief, initialState?: Standar
   const [searchQuery, setSearchQuery] = useState(() => explicitInitialState.searchQuery ?? '')
   const [articlePanelOpen, setArticlePanelOpen] = useState(() => explicitInitialState.articlePanelOpen ?? true)
   const [feedback, setFeedback] = useState<StandardFeedback>(null)
-  const [savedArticleIds, setSavedArticleIds] = useState(() => readSavedArticleIds(articles))
-  const [savedIdsHydrated, setSavedIdsHydrated] = useState(false)
+  const [readArticleIds, setReadArticleIds] = useState(() => readStandardArticleState(articles).readArticleIds)
+  const [savedArticleIds, setSavedArticleIds] = useState(() => readStandardArticleState(articles).savedArticleIds)
+  const [favoritedArticleIds, setFavoritedArticleIds] = useState(
+    () => readStandardArticleState(articles).favoritedArticleIds,
+  )
+  const [articleStateHydrated, setArticleStateHydrated] = useState(false)
+  const [showUnreadOnly, setShowUnreadOnly] = useState(false)
   const [actionNotice, setActionNotice] = useState<StandardActionNotice>(null)
+  const [feedNotice, setFeedNotice] = useState<string | null>(null)
   const [copiedAnalysisArticleId, setCopiedAnalysisArticleId] = useState<string | null>(null)
   const [relatedOpen, setRelatedOpen] = useState(false)
   const [urlHydrated, setUrlHydrated] = useState(hasExplicitInitialState)
   const deferredSearchQuery = useDeferredValue(searchQuery)
   const noticeTimerRef = useRef<number | null>(null)
+  const feedNoticeTimerRef = useRef<number | null>(null)
   const copyTimerRef = useRef<number | null>(null)
 
   const activeSources = sources.filter((source) => source.active).length
   const filteredArticles = useMemo(
-    () =>
-      filterStandardArticles({
+    () => {
+      const nextArticles = filterStandardArticles({
         articles,
         searchQuery: deferredSearchQuery,
-        selectedCategory,
         selectedSourceId,
-      }),
-    [articles, deferredSearchQuery, selectedCategory, selectedSourceId],
+      })
+
+      return showUnreadOnly ? nextArticles.filter((article) => !readArticleIds.has(article.id)) : nextArticles
+    },
+    [articles, deferredSearchQuery, readArticleIds, selectedSourceId, showUnreadOnly],
   )
   const selectedArticle =
     filteredArticles.find((article) => article.id === selectedArticleId) ??
     getSelectedArticle(articles, selectedArticleId)
-  const hasActiveFilters = Boolean(searchQuery || selectedCategory !== defaultCategory || selectedSourceId)
+  const hasActiveFilters = Boolean(searchQuery || selectedSourceId || showUnreadOnly)
   const relatedArticles = useMemo(() => getRelatedStandardArticles(articles, selectedArticle), [articles, selectedArticle])
+  const unreadCount = articles.reduce((count, article) => count + (readArticleIds.has(article.id) ? 0 : 1), 0)
 
   useEffect(() => {
-    setSavedArticleIds(readSavedArticleIds(articles))
-    setSavedIdsHydrated(true)
+    const nextArticleState = readStandardArticleState(articles)
+
+    setReadArticleIds(nextArticleState.readArticleIds)
+    setSavedArticleIds(nextArticleState.savedArticleIds)
+    setFavoritedArticleIds(nextArticleState.favoritedArticleIds)
+    setArticleStateHydrated(true)
   }, [articles])
 
   useEffect(() => {
-    if (!savedIdsHydrated) {
+    if (!articleStateHydrated) {
       return
     }
 
-    writeSavedArticleIds(savedArticleIds)
-  }, [savedArticleIds, savedIdsHydrated])
+    writeStandardArticleState({ readArticleIds, savedArticleIds, favoritedArticleIds })
+  }, [articleStateHydrated, favoritedArticleIds, readArticleIds, savedArticleIds])
 
   useEffect(
     () => () => {
@@ -92,6 +101,10 @@ export function useStandardReaderState(brief: DailyBrief, initialState?: Standar
 
       if (copyTimerRef.current) {
         window.clearTimeout(copyTimerRef.current)
+      }
+
+      if (feedNoticeTimerRef.current) {
+        window.clearTimeout(feedNoticeTimerRef.current)
       }
     },
     [],
@@ -111,7 +124,6 @@ export function useStandardReaderState(brief: DailyBrief, initialState?: Standar
     )
 
     setSelectedArticleId(urlInitialState.selectedArticleId ?? brief.selectedItemId)
-    setSelectedCategory(urlInitialState.selectedCategory ?? defaultCategory)
     setSelectedSourceId(urlInitialState.selectedSourceId ?? null)
     setSearchQuery(urlInitialState.searchQuery ?? '')
     setArticlePanelOpen(urlInitialState.articlePanelOpen ?? true)
@@ -143,7 +155,6 @@ export function useStandardReaderState(brief: DailyBrief, initialState?: Standar
       defaultArticleId: brief.selectedItemId,
       searchQuery,
       selectedArticleId: selectedArticle.id,
-      selectedCategory,
       selectedSourceId,
     })
 
@@ -160,7 +171,6 @@ export function useStandardReaderState(brief: DailyBrief, initialState?: Standar
     brief.selectedItemId,
     searchQuery,
     selectedArticle.id,
-    selectedCategory,
     selectedSourceId,
     urlHydrated,
   ])
@@ -202,8 +212,22 @@ export function useStandardReaderState(brief: DailyBrief, initialState?: Standar
 
   function clearReaderFilters() {
     setSearchQuery('')
-    setSelectedCategory(defaultCategory)
     setSelectedSourceId(null)
+    setShowUnreadOnly(false)
+  }
+
+  function refreshFeed() {
+    showFeedNotice(`Feed refreshed · ${articles.length} items`)
+  }
+
+  function markAllRead() {
+    setReadArticleIds((current) => {
+      const next = new Set(current)
+
+      filteredArticles.forEach((article) => next.add(article.id))
+      return next
+    })
+    showFeedNotice(`Marked ${filteredArticles.length} items as read`)
   }
 
   function toggleSaveArticle(articleId: string) {
@@ -221,6 +245,23 @@ export function useStandardReaderState(brief: DailyBrief, initialState?: Standar
       return next
     })
     showActionNotice(articleId, willSave ? 'Saved' : 'Removed', willSave ? 'positive' : 'neutral')
+  }
+
+  function toggleFavoriteArticle(articleId: string) {
+    const willFavorite = !favoritedArticleIds.has(articleId)
+
+    setFavoritedArticleIds((current) => {
+      const next = new Set(current)
+
+      if (next.has(articleId)) {
+        next.delete(articleId)
+        return next
+      }
+
+      next.add(articleId)
+      return next
+    })
+    showActionNotice(articleId, willFavorite ? 'Favorited' : 'Unfavorited', willFavorite ? 'positive' : 'neutral')
   }
 
   function shareArticle(articleId: string) {
@@ -262,20 +303,34 @@ export function useStandardReaderState(brief: DailyBrief, initialState?: Standar
     noticeTimerRef.current = window.setTimeout(() => setActionNotice(null), 1800)
   }
 
+  function showFeedNotice(label: string) {
+    setFeedNotice(label)
+
+    if (feedNoticeTimerRef.current) {
+      window.clearTimeout(feedNoticeTimerRef.current)
+    }
+
+    feedNoticeTimerRef.current = window.setTimeout(() => setFeedNotice(null), 1800)
+  }
+
   return {
     articles,
     sources,
     activeSources,
     filteredArticles,
+    unreadCount,
     selectedArticle,
-    selectedCategory,
     selectedSourceId,
     selectedRailMode,
     searchQuery,
     articlePanelOpen,
     feedback,
+    readArticleIds,
     savedArticleIds,
+    favoritedArticleIds,
+    showUnreadOnly,
     actionNotice,
+    feedNotice,
     copiedAnalysisArticleId,
     relatedArticles,
     relatedOpen,
@@ -286,6 +341,8 @@ export function useStandardReaderState(brief: DailyBrief, initialState?: Standar
       copyAnalysis,
       closeArticlePanel,
       openArticlePanel,
+      markAllRead,
+      refreshFeed,
       shareArticle,
       selectArticle,
       selectNextArticle,
@@ -294,8 +351,9 @@ export function useStandardReaderState(brief: DailyBrief, initialState?: Standar
       setArticlePanelOpen,
       setRelatedOpen,
       setSearchQuery,
-      setSelectedCategory,
+      setShowUnreadOnly,
       setSelectedRailMode,
+      toggleFavoriteArticle,
       toggleSaveArticle,
     },
   }

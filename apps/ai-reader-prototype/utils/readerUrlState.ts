@@ -6,7 +6,6 @@ type StandardReaderUrlState = {
   defaultArticleId: string
   searchQuery: string
   selectedArticleId: string
-  selectedCategory: string
   selectedSourceId: string | null
 }
 
@@ -24,7 +23,6 @@ export function readStandardReaderInitialStateFromSearch(
     sources,
     state: {
       selectedArticleId: params.get('item') ?? undefined,
-      selectedCategory: params.get('category') ?? undefined,
       selectedSourceId: params.get('source'),
       searchQuery: params.get('q') ?? undefined,
       articlePanelOpen: params.get('detail') === '0' ? false : undefined,
@@ -34,7 +32,7 @@ export function readStandardReaderInitialStateFromSearch(
 
 export function writeStandardReaderUrlState(url: URL, state: StandardReaderUrlState) {
   applyUrlParam(url, 'q', state.searchQuery)
-  applyUrlParam(url, 'category', state.selectedCategory === 'All' ? '' : state.selectedCategory)
+  url.searchParams.delete('category')
   applyUrlParam(url, 'source', state.selectedSourceId ?? '')
   applyUrlParam(url, 'item', state.selectedArticleId === state.defaultArticleId ? '' : state.selectedArticleId)
   applyUrlParam(url, 'detail', state.articlePanelOpen ? '' : '0')
