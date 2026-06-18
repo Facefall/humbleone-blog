@@ -25,8 +25,10 @@ import {
   DocumentTextIcon,
   PhotoIcon,
   PlayCircleIcon,
+  PlusIcon,
   Squares2X2Icon,
 } from './ReaderIcons'
+import { StandardSourceAddDialog, type StandardSourceAddDialogValue } from './StandardSourceAddDialog'
 import { StandardSourceFilterMenu } from './StandardSourceFilterMenu'
 import { StandardSourceGroup } from './StandardSourceGroup'
 import { StandardSourceDeleteDialog } from './StandardSourceDeleteDialog'
@@ -50,7 +52,7 @@ type StandardSourcesPanelProps = {
 type SourceContentFilter = SourceContentType | 'all'
 
 type SourceManagementDialog =
-  | { type: 'create-collection' }
+  | { type: 'add-source-url' }
   | { type: 'rename-collection'; collection: SourceCollection }
   | { type: 'delete-collection'; collection: SourceCollection }
   | { type: 'add-sources'; collection: SourceCollection }
@@ -199,6 +201,21 @@ export function StandardSourcesPanel({
     setActiveDrag(null)
   }
 
+  function handleAddSourceUrl(value: StandardSourceAddDialogValue) {
+    if (value.tagMode !== 'new') {
+      return
+    }
+
+    const normalizedNewTagName = value.newTagName.trim().toLowerCase()
+    const tagAlreadyExists = sourceCollections.collections.some(
+      (collection) => getCollectionLabel(collection).trim().toLowerCase() === normalizedNewTagName,
+    )
+
+    if (!tagAlreadyExists) {
+      sourceCollections.actions.createCollection(value.newTagName)
+    }
+  }
+
   useGsapElementEntrance(panelRef, 'standard-sources-panel', {
     duration: 0.22,
     scale: 0.985,
@@ -224,6 +241,14 @@ export function StandardSourcesPanel({
             <small>
               {showActiveOnly ? visibleSources.length : activeSources}/{sources.length}
             </small>
+            <button
+              type="button"
+              aria-label={t('sourceManagement.addSourceUrlAria')}
+              title={t('sourceManagement.addSourceUrl')}
+              onClick={() => setManagementDialog({ type: 'add-source-url' })}
+            >
+              <PlusIcon />
+            </button>
             <StandardSourceFilterMenu
               activeCount={activeSources}
               totalCount={sources.length}
@@ -260,10 +285,7 @@ export function StandardSourcesPanel({
           })}
         </div>
       </header>
-      <StandardSourceGroupsToolbar
-        groupCount={sourceCollections.collections.length}
-        onCreateCollection={() => setManagementDialog({ type: 'create-collection' })}
-      />
+      <StandardSourceGroupsToolbar groupCount={sourceCollections.collections.length} />
       <DndContext
         sensors={sensors}
         collisionDetection={sourceCollisionDetection}
@@ -287,7 +309,6 @@ export function StandardSourcesPanel({
                 items={items}
                 selectedSourceId={selectedSourceId}
                 onAddSources={(nextCollection) => setManagementDialog({ type: 'add-sources', collection: nextCollection })}
-                onCreateCollection={() => setManagementDialog({ type: 'create-collection' })}
                 onDeleteCollection={(nextCollection) => setManagementDialog({ type: 'delete-collection', collection: nextCollection })}
                 onRemoveSourceFromCollection={sourceCollections.actions.removeSourceFromCollection}
                 onRenameCollection={(nextCollection) => setManagementDialog({ type: 'rename-collection', collection: nextCollection })}
@@ -300,20 +321,16 @@ export function StandardSourcesPanel({
         </div>
       </DndContext>
       <StandardSourceInspector
-        sources={sourceCollections.sources}
         libraryCounts={libraryCounts}
         libraryFilter={libraryFilter}
         onSelectLibraryFilter={onSelectLibraryFilter}
       />
-      <StandardSourceTextDialog
-        description={t('sourceManagement.createGroupDescription')}
-        label={t('sourceManagement.groupNameLabel')}
-        open={managementDialog?.type === 'create-collection'}
-        placeholder={t('sourceManagement.groupNamePlaceholder')}
-        submitLabel={t('sourceManagement.createGroupSubmit')}
-        title={t('sourceManagement.createGroupTitle')}
+      <StandardSourceAddDialog
+        collections={sourceCollections.collections}
+        getCollectionLabel={getCollectionLabel}
+        open={managementDialog?.type === 'add-source-url'}
         onOpenChange={(open) => !open && setManagementDialog(null)}
-        onSubmit={sourceCollections.actions.createCollection}
+        onSubmit={handleAddSourceUrl}
       />
       <StandardSourceTextDialog
         description={t('sourceManagement.renameGroupDescription')}

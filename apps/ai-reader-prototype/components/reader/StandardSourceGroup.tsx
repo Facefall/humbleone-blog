@@ -20,7 +20,6 @@ type StandardSourceGroupProps = {
   items: StandardSource[]
   selectedSourceId: string | null
   onAddSources: (collection: SourceCollection) => void
-  onCreateCollection: () => void
   onDeleteCollection: (collection: SourceCollection) => void
   onRemoveSourceFromCollection: (collectionId: string, sourceId: string) => void
   onRenameCollection: (collection: SourceCollection) => void
@@ -38,7 +37,6 @@ export function StandardSourceGroup({
   items,
   selectedSourceId,
   onAddSources,
-  onCreateCollection,
   onDeleteCollection,
   onRemoveSourceFromCollection,
   onRenameCollection,
@@ -78,14 +76,13 @@ export function StandardSourceGroup({
           aria-expanded={!collapsed}
           onClick={() => onToggle(collection.id)}
         >
+          <ChevronDownIcon />
           <span>{collectionLabel}</span>
           <small>{collection.sourceIds.length}</small>
-          <ChevronDownIcon />
         </button>
         <StandardSourceCollectionMenu
           canDelete={collectionCount > 1}
           onAddSources={() => onAddSources(collection)}
-          onCreateCollection={onCreateCollection}
           onDeleteCollection={() => onDeleteCollection(collection)}
           onRenameCollection={() => onRenameCollection(collection)}
         />

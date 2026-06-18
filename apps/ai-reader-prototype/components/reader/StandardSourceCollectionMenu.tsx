@@ -2,12 +2,11 @@
 
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useTranslation } from 'react-i18next'
-import { EllipsisHorizontalIcon, FolderPlusIcon, PencilSquareIcon, PlusIcon, TrashIcon } from './ReaderIcons'
+import { EllipsisHorizontalIcon, FolderPlusIcon, PencilSquareIcon, TrashIcon } from './ReaderIcons'
 
 type StandardSourceCollectionMenuProps = {
   canDelete: boolean
   onAddSources: () => void
-  onCreateCollection: () => void
   onDeleteCollection: () => void
   onRenameCollection: () => void
 }
@@ -15,7 +14,6 @@ type StandardSourceCollectionMenuProps = {
 export function StandardSourceCollectionMenu({
   canDelete,
   onAddSources,
-  onCreateCollection,
   onDeleteCollection,
   onRenameCollection,
 }: StandardSourceCollectionMenuProps) {
@@ -37,10 +35,6 @@ export function StandardSourceCollectionMenu({
           <DropdownMenu.Item className="standard-source-action-menu-item" onSelect={onRenameCollection}>
             <PencilSquareIcon />
             <span>{t('sourceManagement.renameGroup')}</span>
-          </DropdownMenu.Item>
-          <DropdownMenu.Item className="standard-source-action-menu-item" onSelect={onCreateCollection}>
-            <PlusIcon />
-            <span>{t('sourceManagement.newGroup')}</span>
           </DropdownMenu.Item>
           <DropdownMenu.Separator className="standard-source-action-menu-separator" />
           <DropdownMenu.Item
