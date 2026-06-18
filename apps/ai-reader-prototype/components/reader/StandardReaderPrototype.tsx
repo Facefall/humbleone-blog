@@ -2,8 +2,6 @@
 
 import { useRef } from 'react'
 import type { DailyBrief } from '../../lib/prototype-data'
-import { ReaderThemeToggle } from '../ReaderThemeToggle'
-import { LocaleSwitcher } from '../LocaleSwitcher'
 import { ResizableReaderLayout } from './ResizableReaderLayout'
 import type { ResizableReaderLayoutControls } from './ResizableReaderLayout'
 import { useStandardReaderKeyboard } from '../../hooks/useStandardReaderKeyboard'
@@ -12,17 +10,16 @@ import { StandardArticlePanel } from './StandardArticlePanel'
 import { StandardFeedPanel } from './StandardFeedPanel'
 import { StandardSourceRail } from './StandardSourceRail'
 import { StandardSourcesPanel } from './StandardSourcesPanel'
-import { StandardTopBar } from './StandardTopBar'
+import { StandardSearchCommand } from './StandardSearchCommand'
 import type { StandardReaderInitialState } from '../../types/reader'
 import { StandardArticleRestorePanel } from './StandardArticleRestorePanel'
 
 type StandardReaderPrototypeProps = {
   brief: DailyBrief
   initialState?: StandardReaderInitialState
-  showThemeSwitch?: boolean
 }
 
-export function StandardReaderPrototype({ brief, initialState, showThemeSwitch = false }: StandardReaderPrototypeProps) {
+export function StandardReaderPrototype({ brief, initialState }: StandardReaderPrototypeProps) {
   const searchInputRef = useRef<HTMLInputElement>(null)
   const readerState = useStandardReaderState(brief, initialState)
   useStandardReaderKeyboard({
@@ -40,20 +37,10 @@ export function StandardReaderPrototype({ brief, initialState, showThemeSwitch =
 
   return (
     <main className="standard-reader" data-theme="standard">
-      <StandardTopBar
-        brief={brief}
-        feedCount={readerState.activeSources}
+      <StandardSearchCommand
         resultCount={readerState.filteredArticles.length}
         searchQuery={readerState.searchQuery}
         searchInputRef={searchInputRef}
-        actions={
-          showThemeSwitch ? (
-            <>
-              <LocaleSwitcher />
-              <ReaderThemeToggle currentTheme="standard" />
-            </>
-          ) : null
-        }
         onSearchQueryChange={readerState.actions.setSearchQuery}
       />
       <ResizableReaderLayout

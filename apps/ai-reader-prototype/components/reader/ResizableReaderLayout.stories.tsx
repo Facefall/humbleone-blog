@@ -7,11 +7,9 @@ import { StandardFeedPanel } from './StandardFeedPanel'
 import { StandardReaderStoryFrame } from './StandardReaderStoryFrame'
 import { StandardSourceRail } from './StandardSourceRail'
 import { StandardSourcesPanel } from './StandardSourcesPanel'
-import { StandardTopBar } from './StandardTopBar'
 import {
   storyActiveSources,
   storyArticles,
-  storyBrief,
   storyRelatedArticles,
   storySelectedArticle,
   storySources,
@@ -49,13 +47,6 @@ function ResizableLayoutStory() {
 
   return (
     <StandardReaderStoryFrame>
-      <StandardTopBar
-        brief={storyBrief}
-        feedCount={storyActiveSources}
-        resultCount={visibleArticles.length}
-        searchQuery=""
-        onSearchQueryChange={() => undefined}
-      />
       <ResizableReaderLayout
         renderLeft={(controls) => (
           controls.sourcesCollapsed ? (
