@@ -31,3 +31,26 @@ button {
   cursor: pointer;
 }
 
+.reader-csr-shell {
+  display: grid;
+  min-height: 100vh;
+  place-content: center;
+  gap: 10px;
+  color: var(--standard-text);
+  background: #080808;
+  font-family: 'IBM Plex Mono', 'JetBrains Mono', Consolas, monospace;
+  letter-spacing: 0.08em;
+}
+
+.reader-csr-shell span {
+  color: var(--standard-primary);
+  font-size: 12px;
+}
+
+.reader-csr-shell strong {
+  color: var(--standard-muted);
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
