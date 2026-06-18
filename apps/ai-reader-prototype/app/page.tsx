@@ -1,12 +1,15 @@
 import { Suspense } from 'react'
 import { ReaderAppClient } from './ReaderAppClient'
+import { I18nProvider } from '../providers/I18nProvider'
 
 function ReaderAppFallback() {
   return (
-    <main className="reader-csr-shell" aria-busy="true" aria-label="Loading reader">
-      <span>AI</span>
-      <strong>Loading reader workspace</strong>
-    </main>
+    <I18nProvider>
+      <main className="reader-csr-shell" aria-busy="true">
+        <span>AI</span>
+        <strong>…</strong>
+      </main>
+    </I18nProvider>
   )
 }
 

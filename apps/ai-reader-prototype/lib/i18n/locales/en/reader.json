@@ -1,0 +1,171 @@
+{
+  "topbar": {
+    "brand": "Newspaper Reader",
+    "live": "LIVE",
+    "feeds": "{{count}} FEEDS",
+    "items": "{{count}} ITEMS",
+    "searchPlaceholder": "Search content...",
+    "searchOpenAria": "Open content search",
+    "searchClearAria": "Clear content search",
+    "searchDialogAria": "Content search",
+    "searchInputAria": "Content search",
+    "searchInputPlaceholder": "Search articles, sources, summaries...",
+    "matchingItems": "{{count}} matching items",
+    "filteringFeed": "Filtering current feed",
+    "searchHint": "Search titles, sources, authors, summaries, tags, topics, and fetched RSS content.",
+    "navigateFeed": "Navigate feed",
+    "shortcutMac": "⌘ K",
+    "shortcutWin": "Ctrl K"
+  },
+  "feed": {
+    "aria": "Today feed",
+    "list": "Feed list",
+    "unreadList": "Unread feed",
+    "shownUnread": "{{shown}} shown · {{unread}} unread",
+    "actionsAria": "Feed actions",
+    "refresh": "Refresh",
+    "refreshAria": "Refresh feed",
+    "unreadOnly": "Unread only",
+    "unreadOnlyAria": "Show unread articles only",
+    "markRead": "Mark read",
+    "markReadAria": "Mark all visible articles as read",
+    "sourceFilterActive": "Source filter active",
+    "detailMinimized": "Article detail minimized",
+    "breaking": "Breaking",
+    "readTime": "{{minutes}}m read",
+    "actionsAriaArticle": "Article actions",
+    "save": "Save for later",
+    "saveAria": "Save for later",
+    "unsave": "Remove from saved",
+    "unsaveAria": "Remove from saved for later",
+    "favorite": "Favorite article",
+    "favoriteAria": "Favorite article",
+    "unfavorite": "Remove favorite",
+    "unfavoriteAria": "Remove from favorites",
+    "unfavoriteTitle": "Remove favorite",
+    "favoriteTitle": "Favorite for long-term reference",
+    "shareAria": "Copy article link",
+    "openOriginalAria": "Open original article",
+    "emptyTitle": "No matching signals",
+    "emptyHint": "Clear the source filter or search query.",
+    "notice": {
+      "refreshed": "Feed refreshed · {{count}} items",
+      "markedRead": "Marked {{count}} items as read"
+    }
+  },
+  "article": {
+    "aria": "Selected article",
+    "minimizeAria": "Minimize detail panel",
+    "readFull": "Read full article",
+    "aiAnalysis": "AI Analysis",
+    "sentimentPositive": "positive",
+    "helpfulPrompt": "Was this helpful?",
+    "helpfulAria": "Helpful",
+    "notHelpfulAria": "Not helpful",
+    "copyAnalysisAria": "Copy analysis",
+    "keyPoints": "Key Points",
+    "relatedStories": "Related Stories",
+    "relatedCount": "{{count}} articles",
+    "relatedEmpty": "No close signals in this brief."
+  },
+  "restore": {
+    "aria": "Minimized article detail",
+    "minimized": "Reader minimized",
+    "restoreDetail": "Restore detail"
+  },
+  "sources": {
+    "aria": "Sources",
+    "title": "Sources",
+    "collapseAria": "Collapse sources panel",
+    "contentTypesAria": "Source content types",
+    "showTabAria": "Show {{label}} sources, {{count}} total",
+    "tabs": {
+      "all": "All",
+      "article": "Articles",
+      "social": "Social",
+      "image": "Images",
+      "video": "Videos"
+    }
+  },
+  "rail": {
+    "aria": "Reader modes",
+    "sources": "Sources",
+    "signals": "Signals",
+    "trends": "Trends",
+    "radio": "Radio",
+    "library": "Library",
+    "settings": "Settings"
+  },
+  "filter": {
+    "openAria": "Open source filters",
+    "title": "Source filters",
+    "sourceView": "Source view",
+    "allSources": "All sources",
+    "allFeeds": "{{count}} feeds",
+    "activeOnly": "Active only",
+    "activeLive": "{{count}} live",
+    "expandGroups": "Expand groups",
+    "expandHint": "Show every section",
+    "collapseGroups": "Collapse groups",
+    "collapseHint": "Compact source list"
+  },
+  "group": {
+    "expandAria": "Expand {{category}} sources",
+    "collapseAria": "Collapse {{category}} sources"
+  },
+  "inspector": {
+    "overviewAria": "Feed hub overview",
+    "feedHub": "Feed Hub",
+    "active": "Active",
+    "failed": "Failed",
+    "overviewHint": "Official feeds first; RSSHub and manual capture stay visible as weaker adapters.",
+    "registryAria": "{{name}} registry",
+    "registry": "Registry",
+    "method": "Method",
+    "cadence": "Cadence",
+    "adapter": "Adapter",
+    "language": "Language",
+    "openSource": "Open source",
+    "noRegistry": "No registry record yet."
+  },
+  "fetchMethod": {
+    "official_rss": "official RSS",
+    "official_api": "official API",
+    "rsshub": "RSSHub",
+    "custom_scrape": "custom scrape",
+    "manual": "manual"
+  },
+  "registryLanguage": {
+    "zh-CN": "Chinese",
+    "en": "English",
+    "mixed": "Mixed"
+  },
+  "categories": {
+    "model_lab": "AI Labs",
+    "builder": "Builders",
+    "community": "Community",
+    "project_changelog": "Runtime",
+    "personal_repo": "Repos",
+    "research": "Research",
+    "general": "General"
+  },
+  "resizer": {
+    "sourcesAria": "Resize sources panel",
+    "articleAria": "Resize article panel"
+  },
+  "actions": {
+    "saved": "Saved",
+    "removed": "Removed",
+    "favorited": "Favorited",
+    "unfavorited": "Unfavorited",
+    "linkCopied": "Link copied",
+    "analysisCopied": "Analysis copied"
+  },
+  "prototype": {
+    "controlsAria": "Prototype controls",
+    "framingAria": "Prototype framing",
+    "stageAria": "Today reader prototype",
+    "deskNavAria": "Desk navigation",
+    "importanceScoreAria": "Importance score {{score}}"
+  }
+}

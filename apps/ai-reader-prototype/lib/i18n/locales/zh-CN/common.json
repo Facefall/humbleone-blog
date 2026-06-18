@@ -1,0 +1,23 @@
+{
+  "loading": {
+    "reader": "正在加载阅读器工作区",
+    "aria": "正在加载阅读器"
+  },
+  "localeSwitcher": {
+    "aria": "切换界面语言",
+    "zh": "中文",
+    "en": "EN"
+  },
+  "theme": {
+    "aria": "阅读器主题",
+    "standard": "标准",
+    "desk": "工作台"
+  },
+  "actions": {
+    "close": "关闭",
+    "clear": "清除",
+    "restore": "恢复",
+    "edit": "编辑",
+    "copied": "已复制"
+  }
+}

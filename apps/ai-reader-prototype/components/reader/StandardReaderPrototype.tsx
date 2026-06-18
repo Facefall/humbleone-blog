@@ -3,6 +3,7 @@
 import { useRef } from 'react'
 import type { DailyBrief } from '../../lib/prototype-data'
 import { ReaderThemeToggle } from '../ReaderThemeToggle'
+import { LocaleSwitcher } from '../LocaleSwitcher'
 import { ResizableReaderLayout } from './ResizableReaderLayout'
 import type { ResizableReaderLayoutControls } from './ResizableReaderLayout'
 import { useStandardReaderKeyboard } from '../../hooks/useStandardReaderKeyboard'
@@ -45,7 +46,14 @@ export function StandardReaderPrototype({ brief, initialState, showThemeSwitch =
         resultCount={readerState.filteredArticles.length}
         searchQuery={readerState.searchQuery}
         searchInputRef={searchInputRef}
-        actions={showThemeSwitch ? <ReaderThemeToggle currentTheme="standard" /> : null}
+        actions={
+          showThemeSwitch ? (
+            <>
+              <LocaleSwitcher />
+              <ReaderThemeToggle currentTheme="standard" />
+            </>
+          ) : null
+        }
         onSearchQueryChange={readerState.actions.setSearchQuery}
       />
       <ResizableReaderLayout

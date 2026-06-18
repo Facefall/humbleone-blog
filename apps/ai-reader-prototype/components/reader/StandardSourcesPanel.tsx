@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from 'react'
 import countBy from 'lodash/countBy'
 import groupBy from 'lodash/groupBy'
 import uniq from 'lodash/uniq'
+import { useTranslation } from 'react-i18next'
 import { useGsapElementEntrance, useGsapElementPulse } from '../../hooks/useGsapMotion'
 import { useSourcePanelPreferences } from '../../hooks/useSourcePanelPreferences'
 import type { SourceContentType } from '../../services/sourceRegistry'
@@ -32,12 +33,12 @@ type StandardSourcesPanelProps = {
 type SourceContentFilter = SourceContentType | 'all'
 
 const sourceContentTabs = [
-  { id: 'all', label: '全部', icon: Squares2X2Icon },
-  { id: 'article', label: '文章', icon: DocumentTextIcon },
-  { id: 'social', label: '社交媒体', icon: ChatBubbleLeftRightIcon },
-  { id: 'image', label: '图片', icon: PhotoIcon },
-  { id: 'video', label: '视频', icon: PlayCircleIcon },
-] satisfies Array<{ id: SourceContentFilter; label: string; icon: typeof Squares2X2Icon }>
+  { id: 'all', icon: Squares2X2Icon },
+  { id: 'article', icon: DocumentTextIcon },
+  { id: 'social', icon: ChatBubbleLeftRightIcon },
+  { id: 'image', icon: PhotoIcon },
+  { id: 'video', icon: PlayCircleIcon },
+] satisfies Array<{ id: SourceContentFilter; icon: typeof Squares2X2Icon }>
 
 export function StandardSourcesPanel({
   sources,
@@ -47,6 +48,7 @@ export function StandardSourcesPanel({
   onCollapse,
   onSelectSource,
 }: StandardSourcesPanelProps) {
+  const { t } = useTranslation('reader')
   const panelRef = useRef<HTMLElement>(null)
   const [selectedContentType, setSelectedContentType] = useState<SourceContentFilter>('all')
   const [filterMenuMotionKey, setFilterMenuMotionKey] = useState(0)
@@ -89,11 +91,11 @@ export function StandardSourcesPanel({
     <aside
       ref={panelRef}
       className={`standard-sources-panel${collapsing ? ' is-collapsing' : ''}`}
-      aria-label="Sources"
+      aria-label={t('sources.aria')}
     >
       <header>
         <div className="standard-sources-panel-heading">
-          <span>Sources</span>
+          <span>{t('sources.title')}</span>
           <div className="standard-sources-panel-actions">
             <small>
               {showActiveOnly ? visibleSources.length : activeSources}/{sources.length}
@@ -107,23 +109,24 @@ export function StandardSourcesPanel({
               onOpenChange={() => setFilterMenuMotionKey((current) => current + 1)}
               onShowActiveOnlyChange={sourcePanelPreferences.actions.setShowActiveOnly}
             />
-            <button type="button" aria-label="Collapse sources panel" onClick={onCollapse}>
+            <button type="button" aria-label={t('sources.collapseAria')} onClick={onCollapse}>
               <ArrowLeftStartOnRectangleIcon />
             </button>
           </div>
         </div>
-        <div className="standard-source-content-tabs" aria-label="Source content types">
+        <div className="standard-source-content-tabs" aria-label={t('sources.contentTypesAria')}>
           {sourceContentTabs.map((tab) => {
             const ContentIcon = tab.icon
+            const label = t(`sources.tabs.${tab.id}`)
 
             return (
               <button
                 key={tab.id}
                 type="button"
                 className={tab.id === selectedContentType ? 'is-active' : undefined}
-                aria-label={`Show ${tab.label} sources, ${contentCounts[tab.id]} total`}
+                aria-label={t('sources.showTabAria', { label, count: contentCounts[tab.id] })}
                 aria-pressed={tab.id === selectedContentType}
-                data-tooltip={tab.label}
+                data-tooltip={label}
                 onClick={() => setSelectedContentType(tab.id)}
               >
                 <ContentIcon />

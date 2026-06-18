@@ -1,0 +1,171 @@
+{
+  "topbar": {
+    "brand": "报纸阅读器",
+    "live": "实时",
+    "feeds": "{{count}} 个来源",
+    "items": "{{count}} 条",
+    "searchPlaceholder": "搜索内容…",
+    "searchOpenAria": "打开内容搜索",
+    "searchClearAria": "清除搜索",
+    "searchDialogAria": "内容搜索",
+    "searchInputAria": "内容搜索",
+    "searchInputPlaceholder": "搜索文章、来源、摘要…",
+    "matchingItems": "{{count}} 条匹配",
+    "filteringFeed": "正在筛选当前 feed",
+    "searchHint": "可搜索标题、来源、作者、摘要、标签、主题及 RSS 内容。",
+    "navigateFeed": "浏览 feed",
+    "shortcutMac": "⌘ K",
+    "shortcutWin": "Ctrl K"
+  },
+  "feed": {
+    "aria": "今日 feed",
+    "list": "Feed 列表",
+    "unreadList": "未读 feed",
+    "shownUnread": "{{shown}} 条显示 · {{unread}} 条未读",
+    "actionsAria": "Feed 操作",
+    "refresh": "刷新",
+    "refreshAria": "刷新 feed",
+    "unreadOnly": "仅未读",
+    "unreadOnlyAria": "仅显示未读文章",
+    "markRead": "标为已读",
+    "markReadAria": "将当前可见文章标为已读",
+    "sourceFilterActive": "来源筛选已启用",
+    "detailMinimized": "文章详情已最小化",
+    "breaking": "突发",
+    "readTime": "{{minutes}} 分钟阅读",
+    "actionsAriaArticle": "文章操作",
+    "save": "稍后阅读",
+    "saveAria": "保存供稍后阅读",
+    "unsave": "取消保存",
+    "unsaveAria": "从稍后阅读中移除",
+    "favorite": "收藏",
+    "favoriteAria": "收藏文章",
+    "unfavorite": "取消收藏",
+    "unfavoriteAria": "取消收藏",
+    "unfavoriteTitle": "取消收藏",
+    "favoriteTitle": "长期参考收藏",
+    "shareAria": "复制文章链接",
+    "openOriginalAria": "打开原文",
+    "emptyTitle": "没有匹配的信号",
+    "emptyHint": "清除来源筛选或搜索条件。",
+    "notice": {
+      "refreshed": "Feed 已刷新 · {{count}} 条",
+      "markedRead": "已将 {{count}} 条标为已读"
+    }
+  },
+  "article": {
+    "aria": "选中文章",
+    "minimizeAria": "最小化详情面板",
+    "readFull": "阅读全文",
+    "aiAnalysis": "AI 分析",
+    "sentimentPositive": "积极",
+    "helpfulPrompt": "这条分析有帮助吗？",
+    "helpfulAria": "有帮助",
+    "notHelpfulAria": "没有帮助",
+    "copyAnalysisAria": "复制分析",
+    "keyPoints": "要点",
+    "relatedStories": "相关报道",
+    "relatedCount": "{{count}} 篇文章",
+    "relatedEmpty": "本期简报中没有相近信号。"
+  },
+  "restore": {
+    "aria": "已最小化的文章详情",
+    "minimized": "阅读器已最小化",
+    "restoreDetail": "恢复详情"
+  },
+  "sources": {
+    "aria": "来源",
+    "title": "来源",
+    "collapseAria": "折叠来源面板",
+    "contentTypesAria": "来源内容类型",
+    "showTabAria": "显示 {{label}} 来源，共 {{count}} 个",
+    "tabs": {
+      "all": "全部",
+      "article": "文章",
+      "social": "社交媒体",
+      "image": "图片",
+      "video": "视频"
+    }
+  },
+  "rail": {
+    "aria": "阅读器模式",
+    "sources": "来源",
+    "signals": "信号",
+    "trends": "趋势",
+    "radio": "广播",
+    "library": "书库",
+    "settings": "设置"
+  },
+  "filter": {
+    "openAria": "打开来源筛选",
+    "title": "来源筛选",
+    "sourceView": "来源视图",
+    "allSources": "全部来源",
+    "allFeeds": "{{count}} 个 feed",
+    "activeOnly": "仅活跃",
+    "activeLive": "{{count}} 个在线",
+    "expandGroups": "展开分组",
+    "expandHint": "显示所有分区",
+    "collapseGroups": "折叠分组",
+    "collapseHint": "紧凑来源列表"
+  },
+  "group": {
+    "expandAria": "展开 {{category}} 来源",
+    "collapseAria": "折叠 {{category}} 来源"
+  },
+  "inspector": {
+    "overviewAria": "Feed Hub 概览",
+    "feedHub": "Feed Hub",
+    "active": "活跃",
+    "failed": "失败",
+    "overviewHint": "优先官方 feed；RSSHub 与手动采集作为较弱适配器保持可见。",
+    "registryAria": "{{name}} 注册表",
+    "registry": "注册表",
+    "method": "方式",
+    "cadence": "频率",
+    "adapter": "适配器",
+    "language": "语言",
+    "openSource": "打开来源",
+    "noRegistry": "尚无注册表记录。"
+  },
+  "fetchMethod": {
+    "official_rss": "官方 RSS",
+    "official_api": "官方 API",
+    "rsshub": "RSSHub",
+    "custom_scrape": "自定义抓取",
+    "manual": "手动"
+  },
+  "registryLanguage": {
+    "zh-CN": "中文",
+    "en": "英文",
+    "mixed": "混合"
+  },
+  "categories": {
+    "model_lab": "AI 实验室",
+    "builder": "构建者",
+    "community": "社区",
+    "project_changelog": "运行时",
+    "personal_repo": "仓库",
+    "research": "研究",
+    "general": "综合"
+  },
+  "resizer": {
+    "sourcesAria": "调整来源面板宽度",
+    "articleAria": "调整文章面板宽度"
+  },
+  "actions": {
+    "saved": "已保存",
+    "removed": "已移除",
+    "favorited": "已收藏",
+    "unfavorited": "已取消收藏",
+    "linkCopied": "链接已复制",
+    "analysisCopied": "分析已复制"
+  },
+  "prototype": {
+    "controlsAria": "原型控件",
+    "framingAria": "原型说明",
+    "stageAria": "今日阅读器原型",
+    "deskNavAria": "工作台导航",
+    "importanceScoreAria": "重要性评分 {{score}}"
+  }
+}

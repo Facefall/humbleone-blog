@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useGsapElementEntrance } from '../../hooks/useGsapMotion'
 import type { StandardArticle } from '../../types/reader'
 import { ChevronRightIcon } from './ReaderIcons'
@@ -11,6 +12,7 @@ type StandardArticleRestorePanelProps = {
 }
 
 export function StandardArticleRestorePanel({ article, onRestore }: StandardArticleRestorePanelProps) {
+  const { t } = useTranslation('reader')
   const panelRef = useRef<HTMLElement>(null)
 
   useGsapElementEntrance(panelRef, article.id, {
@@ -21,12 +23,12 @@ export function StandardArticleRestorePanel({ article, onRestore }: StandardArti
   })
 
   return (
-    <aside ref={panelRef} className="standard-article-restore-panel" aria-label="Minimized article detail">
+    <aside ref={panelRef} className="standard-article-restore-panel" aria-label={t('restore.aria')}>
       <button type="button" onClick={onRestore}>
-        <span>Reader minimized</span>
+        <span>{t('restore.minimized')}</span>
         <strong>{article.title}</strong>
         <small>
-          Restore detail
+          {t('restore.restoreDetail')}
           <ChevronRightIcon />
         </small>
       </button>

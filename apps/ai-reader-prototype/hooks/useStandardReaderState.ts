@@ -1,6 +1,7 @@
 'use client'
 
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { DailyBrief } from '../lib/prototype-data'
 import { copyTextToClipboard } from '../services/browserClipboard'
 import { readStandardArticleState, writeStandardArticleState } from '../services/standardReaderStorage'
@@ -16,6 +17,7 @@ import { readStandardReaderInitialStateFromSearch, writeStandardReaderUrlState }
 import { buildSources, flattenArticles, getSelectedArticle } from '../utils/standardReaderModel'
 
 export function useStandardReaderState(brief: DailyBrief, initialState?: StandardReaderInitialState) {
+  const { t } = useTranslation('reader')
   const articles = useMemo(() => flattenArticles(brief), [brief])
   const sources = useMemo(() => buildSources(brief), [brief])
   const explicitInitialState = useMemo(
@@ -217,7 +219,7 @@ export function useStandardReaderState(brief: DailyBrief, initialState?: Standar
   }
 
   function refreshFeed() {
-    showFeedNotice(`Feed refreshed · ${articles.length} items`)
+    showFeedNotice(t('feed.notice.refreshed', { count: articles.length }))
   }
 
   function markAllRead() {
@@ -227,7 +229,7 @@ export function useStandardReaderState(brief: DailyBrief, initialState?: Standar
       filteredArticles.forEach((article) => next.add(article.id))
       return next
     })
-    showFeedNotice(`Marked ${filteredArticles.length} items as read`)
+    showFeedNotice(t('feed.notice.markedRead', { count: filteredArticles.length }))
   }
 
   function toggleSaveArticle(articleId: string) {
@@ -244,7 +246,7 @@ export function useStandardReaderState(brief: DailyBrief, initialState?: Standar
       next.add(articleId)
       return next
     })
-    showActionNotice(articleId, willSave ? 'Saved' : 'Removed', willSave ? 'positive' : 'neutral')
+    showActionNotice(articleId, willSave ? t('actions.saved') : t('actions.removed'), willSave ? 'positive' : 'neutral')
   }
 
   function toggleFavoriteArticle(articleId: string) {
@@ -261,7 +263,7 @@ export function useStandardReaderState(brief: DailyBrief, initialState?: Standar
       next.add(articleId)
       return next
     })
-    showActionNotice(articleId, willFavorite ? 'Favorited' : 'Unfavorited', willFavorite ? 'positive' : 'neutral')
+    showActionNotice(articleId, willFavorite ? t('actions.favorited') : t('actions.unfavorited'), willFavorite ? 'positive' : 'neutral')
   }
 
   function shareArticle(articleId: string) {
@@ -272,7 +274,7 @@ export function useStandardReaderState(brief: DailyBrief, initialState?: Standar
     }
 
     void copyTextToClipboard(article.url)
-    showActionNotice(articleId, 'Link copied', 'positive')
+    showActionNotice(articleId, t('actions.linkCopied'), 'positive')
   }
 
   function copyAnalysis(articleId: string) {
@@ -284,7 +286,7 @@ export function useStandardReaderState(brief: DailyBrief, initialState?: Standar
 
     void copyTextToClipboard(article.reader.aiSummary)
     setCopiedAnalysisArticleId(articleId)
-    showActionNotice(articleId, 'Analysis copied', 'positive')
+    showActionNotice(articleId, t('actions.analysisCopied'), 'positive')
 
     if (copyTimerRef.current) {
       window.clearTimeout(copyTimerRef.current)

@@ -1,8 +1,11 @@
+'use client'
+
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode, RefObject } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { DailyBrief } from '../../lib/prototype-data'
+import { formatIssueDate } from '../../lib/i18n/formatters'
 import { isEditableTarget } from '../../utils/readerUtils'
-import { formatIssueDate } from '../../utils/standardReaderModel'
 import { MagnifyingGlassIcon, XMarkIcon } from './ReaderIcons'
 
 type StandardTopBarProps = {
@@ -24,9 +27,13 @@ export function StandardTopBar({
   actions,
   onSearchQueryChange,
 }: StandardTopBarProps) {
+  const { i18n, t } = useTranslation('reader')
   const [searchOpen, setSearchOpen] = useState(false)
   const localSearchInputRef = useRef<HTMLInputElement | null>(null)
-  const shortcutLabel = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘ K' : 'Ctrl K'
+  const shortcutLabel =
+    typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
+      ? t('topbar.shortcutMac')
+      : t('topbar.shortcutWin')
 
   useEffect(() => {
     if (!searchOpen) {
@@ -77,33 +84,38 @@ export function StandardTopBar({
       <div className="standard-brand">
         <span>AI</span>
         <i />
-        <strong>Newspaper Reader</strong>
+        <strong>{t('topbar.brand')}</strong>
       </div>
       <div className="standard-search" data-active={searchQuery ? 'true' : undefined}>
         <button
           type="button"
           className="standard-search-trigger"
-          aria-label="Open content search"
+          aria-label={t('topbar.searchOpenAria')}
           aria-expanded={searchOpen}
           onClick={() => setSearchOpen(true)}
         >
           <MagnifyingGlassIcon />
-          <span>{searchQuery || 'Search content...'}</span>
+          <span>{searchQuery || t('topbar.searchPlaceholder')}</span>
           <kbd>{shortcutLabel}</kbd>
         </button>
         {searchQuery ? (
-          <button className="standard-search-clear" type="button" aria-label="Clear content search" onClick={() => onSearchQueryChange('')}>
+          <button
+            className="standard-search-clear"
+            type="button"
+            aria-label={t('topbar.searchClearAria')}
+            onClick={() => onSearchQueryChange('')}
+          >
             <XMarkIcon />
           </button>
         ) : null}
       </div>
       <div className="standard-status">
         <span className="standard-live-dot" />
-        <span>LIVE</span>
-        <span>{feedCount.toLocaleString('en-US')} FEEDS</span>
-        {typeof resultCount === 'number' ? <span>{resultCount.toLocaleString('en-US')} ITEMS</span> : null}
+        <span>{t('topbar.live')}</span>
+        <span>{t('topbar.feeds', { count: feedCount })}</span>
+        {typeof resultCount === 'number' ? <span>{t('topbar.items', { count: resultCount })}</span> : null}
         <span>01:36</span>
-        <span>{formatIssueDate(brief.date)}</span>
+        <span>{formatIssueDate(brief.date, i18n.language)}</span>
       </div>
       {actions ? <div className="standard-topbar-actions">{actions}</div> : null}
       {searchOpen ? (
@@ -112,37 +124,41 @@ export function StandardTopBar({
             className="standard-search-modal"
             role="dialog"
             aria-modal="true"
-            aria-label="Content search"
+            aria-label={t('topbar.searchDialogAria')}
             onMouseDown={(event) => event.stopPropagation()}
           >
             <div className="standard-search-modal-box" role="search">
               <MagnifyingGlassIcon />
               <input
                 ref={setSearchInputNode}
-                aria-label="Content search"
-                placeholder="Search articles, sources, summaries..."
+                aria-label={t('topbar.searchInputAria')}
+                placeholder={t('topbar.searchInputPlaceholder')}
                 value={searchQuery}
                 onChange={(event) => onSearchQueryChange(event.target.value)}
               />
               {searchQuery ? (
-                <button type="button" aria-label="Clear content search" onClick={() => onSearchQueryChange('')}>
+                <button type="button" aria-label={t('topbar.searchClearAria')} onClick={() => onSearchQueryChange('')}>
                   <XMarkIcon />
                 </button>
               ) : null}
             </div>
             <div className="standard-search-modal-body">
-              <span>{typeof resultCount === 'number' ? `${resultCount.toLocaleString('en-US')} matching items` : 'Filtering current feed'}</span>
-              <p>Search titles, sources, authors, summaries, tags, topics, and fetched RSS content.</p>
+              <span>
+                {typeof resultCount === 'number'
+                  ? t('topbar.matchingItems', { count: resultCount })
+                  : t('topbar.filteringFeed')}
+              </span>
+              <p>{t('topbar.searchHint')}</p>
             </div>
             <footer className="standard-search-modal-footer">
               <span>
                 <kbd>↑</kbd>
                 <kbd>↓</kbd>
-                Navigate feed
+                {t('topbar.navigateFeed')}
               </span>
               <span>
                 <kbd>Esc</kbd>
-                Close
+                {t('common:actions.close')}
               </span>
             </footer>
           </section>

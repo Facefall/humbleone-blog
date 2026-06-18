@@ -1,4 +1,9 @@
+'use client'
+
+import { useTranslation } from 'react-i18next'
 import type { DailyBrief, FeedItem, SourceDeskItem } from '../lib/prototype-data'
+import { formatDeskDate } from '../lib/i18n/formatters'
+import { LocaleSwitcher } from './LocaleSwitcher'
 import { PrototypeSwitcher } from './PrototypeSwitcher'
 import { ReaderThemeToggle } from './ReaderThemeToggle'
 import {
@@ -16,40 +21,8 @@ import {
 
 export type PrototypeVariant = 'A' | 'B' | 'C'
 
-const variantCopy: Record<PrototypeVariant, { label: string; title: string; note: string }> = {
-  A: {
-    label: 'Variant A',
-    title: 'Editor desk / timeline / newspaper',
-    note: 'Balanced three-pane structure for validating the current product direction.',
-  },
-  B: {
-    label: 'Variant B',
-    title: 'Timeline-led morning sort',
-    note: 'The central daily list dominates while the source desk compresses into tactile source slips.',
-  },
-  C: {
-    label: 'Variant C',
-    title: 'Newspaper-first reading room',
-    note: 'The reader owns the surface while source and timeline context stay visible at the edge.',
-  },
-}
-
 function flattenItems(brief: DailyBrief) {
   return brief.sections.flatMap((section) => section.items)
-}
-
-function formatDate(value: string) {
-  const date = new Date(value)
-
-  if (Number.isNaN(date.getTime())) {
-    return value
-  }
-
-  return new Intl.DateTimeFormat('zh-CN', {
-    month: 'long',
-    day: 'numeric',
-    weekday: 'short',
-  }).format(date)
 }
 
 function getFeaturedItem(brief: DailyBrief) {
@@ -65,28 +38,29 @@ export function TodayPrototype({
   brief: DailyBrief
   variant: PrototypeVariant
 }) {
-  const copy = variantCopy[variant]
+  const { i18n, t } = useTranslation('sourceDesk')
   const featuredItem = getFeaturedItem(brief)
 
   return (
     <main className={`reader-shell variant-${variant.toLowerCase()}`}>
-      <div className="prototype-controls" aria-label="Prototype controls">
+      <div className="prototype-controls" aria-label={t('reader:prototype.controlsAria')}>
+        <LocaleSwitcher />
         <ReaderThemeToggle currentTheme="source-desk" />
         <PrototypeSwitcher variant={variant} />
       </div>
       <section className="prototype-masthead" aria-labelledby="prototype-title">
         <div>
-          <p className="prototype-kicker">{copy.label}</p>
+          <p className="prototype-kicker">{t(`variants.${variant}.label`)}</p>
           <h1 id="prototype-title">{brief.title}</h1>
           <p>{brief.judgment}</p>
         </div>
-        <aside className="masthead-card" aria-label="Prototype framing">
-          <span>{formatDate(brief.date)}</span>
-          <strong>{copy.title}</strong>
-          <small>{copy.note}</small>
+        <aside className="masthead-card" aria-label={t('reader:prototype.framingAria')}>
+          <span>{formatDeskDate(brief.date, i18n.language)}</span>
+          <strong>{t(`variants.${variant}.title`)}</strong>
+          <small>{t(`variants.${variant}.note`)}</small>
         </aside>
       </section>
-      <section className="three-pane-stage" aria-label="Today reader prototype">
+      <section className="three-pane-stage" aria-label={t('reader:prototype.stageAria')}>
         <SourceDesk brief={brief} compact={variant !== 'A'} />
         <TodayTimeline brief={brief} dominant={variant === 'B'} />
         <NewspaperReader brief={brief} item={featuredItem} dominant={variant === 'C'} />
@@ -96,6 +70,7 @@ export function TodayPrototype({
 }
 
 function SourceDesk({ brief, compact }: { brief: DailyBrief; compact?: boolean }) {
+  const { t } = useTranslation('sourceDesk')
   const desk = brief.sourceDesk
   const visibleNavigation = compact ? desk.navigation.slice(0, 3) : desk.navigation
   const visibleGroups = compact ? desk.sourceGroups.slice(0, 3) : desk.sourceGroups
@@ -103,34 +78,34 @@ function SourceDesk({ brief, compact }: { brief: DailyBrief; compact?: boolean }
   const visibleNotes = compact ? desk.pinnedNotes.slice(0, 1) : desk.pinnedNotes.slice(0, 3)
 
   return (
-    <SourceDeskShell density={compact ? 'compact' : 'regular'} aria-label="Source Desk">
+    <SourceDeskShell density={compact ? 'compact' : 'regular'} aria-label={t('sourceDesk.deskAria')}>
       <SourceDeskHeader
         label={desk.issueLabel}
-        title={compact ? 'Source Desk' : desk.masthead}
+        title={compact ? t('sourceDesk.title') : desk.masthead}
         action={<DeskHeaderTools />}
       />
-      <div className="desk-nav" aria-label="Desk navigation">
+      <div className="desk-nav" aria-label={t('reader:prototype.deskNavAria')}>
         {visibleNavigation.map((item) => (
           <DeskChip key={item.id} item={item} />
         ))}
       </div>
-      <SourceDeskSection label="Source Desk" tab kind="folders">
+      <SourceDeskSection label={t('sourceDesk.sectionLabel')} tab kind="folders">
         {visibleGroups.map((source, index) => (
           <SourceSlip key={source.id} source={source} index={index} density={compact ? 'compact' : 'regular'} />
         ))}
       </SourceDeskSection>
-      <SourceDeskSection label="Watched Sources">
+      <SourceDeskSection label={t('sourceDesk.watchedSources')}>
         {visibleSlips.map((source, index) => (
           <SourceSlip key={source.id} source={source} index={index} density={compact ? 'compact' : 'regular'} />
         ))}
       </SourceDeskSection>
-      <SourceDeskSection label="Pinned Notes" action="Edit" kind="notes">
+      <SourceDeskSection label={t('sourceDesk.pinnedNotes')} action={t('common:actions.edit')} kind="notes">
         {visibleNotes.map((note) => (
           <PinnedNoteCard key={note.id} note={note} />
         ))}
       </SourceDeskSection>
       {!compact ? (
-        <SourceDeskSection label="Quick Access" action="Drag to pin" kind="clippings">
+        <SourceDeskSection label={t('sourceDesk.quickAccess')} action={t('sourceDesk.dragToPin')} kind="clippings">
           {desk.quickAccess.slice(0, 4).map((item) => (
             <ClippingCard key={item.id} item={item} />
           ))}
@@ -154,14 +129,16 @@ function DeskChip({ item }: { item: SourceDeskItem }) {
 }
 
 function TodayTimeline({ brief, dominant }: { brief: DailyBrief; dominant?: boolean }) {
+  const { t } = useTranslation('sourceDesk')
+
   return (
-    <section className={`today-timeline panel ${dominant ? 'is-dominant' : ''}`} aria-label="Today Timeline">
+    <section className={`today-timeline panel ${dominant ? 'is-dominant' : ''}`} aria-label={t('timeline.aria')}>
       <header className="panel-header">
         <div>
-          <p className="panel-label">Today Timeline</p>
-          <h2>{dominant ? 'Morning signal order' : 'Today picks'}</h2>
+          <p className="panel-label">{t('timeline.label')}</p>
+          <h2>{dominant ? t('timeline.morningOrder') : t('timeline.todayPicks')}</h2>
         </div>
-        <StampBadge>{brief.itemCount} filed</StampBadge>
+        <StampBadge>{t('timeline.filed', { count: brief.itemCount })}</StampBadge>
       </header>
       <div className="timeline-list">
         {brief.sections.map((section) => (
@@ -181,6 +158,8 @@ function TodayTimeline({ brief, dominant }: { brief: DailyBrief; dominant?: bool
 }
 
 function TimelineCard({ item, index, dominant }: { item: FeedItem; index: number; dominant?: boolean }) {
+  const { t } = useTranslation('reader')
+
   return (
     <article className="timeline-card">
       <div className="timeline-index">{String(index + 1).padStart(2, '0')}</div>
@@ -197,7 +176,7 @@ function TimelineCard({ item, index, dominant }: { item: FeedItem; index: number
           ))}
         </footer>
       </div>
-      <aside className="score-stamp" aria-label={`Importance score ${item.importanceScore}`}>
+      <aside className="score-stamp" aria-label={t('prototype.importanceScoreAria', { score: item.importanceScore })}>
         <span>{item.importanceScore}</span>
       </aside>
     </article>
@@ -213,18 +192,20 @@ function NewspaperReader({
   item?: FeedItem
   dominant?: boolean
 }) {
+  const { t } = useTranslation('sourceDesk')
+
   if (!item) {
     return (
       <article className={`newspaper-reader panel ${dominant ? 'is-dominant' : ''}`}>
-        <p className="panel-label">Newspaper Reader</p>
-        <h2>No items yet</h2>
-        <p>The reader pane is waiting for today&apos;s brief.</p>
+        <p className="panel-label">{t('newspaper.label')}</p>
+        <h2>{t('newspaper.emptyTitle')}</h2>
+        <p>{t('newspaper.emptyHint')}</p>
       </article>
     )
   }
 
   return (
-    <article className={`newspaper-reader panel ${dominant ? 'is-dominant' : ''}`} aria-label="Newspaper Reader">
+    <article className={`newspaper-reader panel ${dominant ? 'is-dominant' : ''}`} aria-label={t('newspaper.aria')}>
       <header className="newspaper-flag">
         <p>{brief.reader.masthead}</p>
         <span>{brief.reader.editionLine}</span>
@@ -237,8 +218,8 @@ function NewspaperReader({
           <p key={paragraph}>{paragraph}</p>
         ))}
       </div>
-      <section className="proof-box" aria-label="Source proof">
-        <h3>Source Proof</h3>
+      <section className="proof-box" aria-label={t('newspaper.sourceProof')}>
+        <h3>{t('newspaper.sourceProof')}</h3>
         {item.reader.sourceProof.map((proof) => (
           <p key={proof}>{proof}</p>
         ))}

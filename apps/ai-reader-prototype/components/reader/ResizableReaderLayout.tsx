@@ -6,6 +6,7 @@ import type {
   PointerEvent as ReactPointerEvent,
   ReactNode,
 } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const collapsedSourceWidth = 50
 const resizerWidth = 6
@@ -52,6 +53,7 @@ export function ResizableReaderLayout({
   feed,
   renderArticle,
 }: ResizableReaderLayoutProps) {
+  const { t } = useTranslation('reader')
   const workspaceRef = useRef<HTMLDivElement>(null)
   const collapseTimerRef = useRef<number | null>(null)
   const [sourcesWidth, setSourcesWidth] = useState(sourceDefaultWidth)
@@ -211,7 +213,7 @@ export function ResizableReaderLayout({
         className={joinClasses('standard-resizer', 'standard-source-resizer', dragging === 'sources' && 'is-active')}
         role="separator"
         aria-orientation="vertical"
-        aria-label="Resize sources panel"
+        aria-label={t('resizer.sourcesAria')}
         tabIndex={0}
         onPointerDown={(event) => beginResize('sources', event)}
         onDoubleClick={controls.toggleSourcesPanel}
@@ -221,7 +223,7 @@ export function ResizableReaderLayout({
         className={joinClasses('standard-resizer', 'standard-article-resizer', dragging === 'article' && 'is-active')}
         role="separator"
         aria-orientation="vertical"
-        aria-label="Resize article panel"
+        aria-label={t('resizer.articleAria')}
         tabIndex={0}
         onPointerDown={(event) => beginResize('article', event)}
         onDoubleClick={controls.resetArticlePanel}

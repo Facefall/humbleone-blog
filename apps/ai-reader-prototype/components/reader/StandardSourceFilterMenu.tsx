@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useGsapElementEntrance } from '../../hooks/useGsapMotion'
 import { joinClasses } from '../../utils/readerUtils'
 import { FunnelIcon } from './ReaderIcons'
@@ -24,6 +25,7 @@ export function StandardSourceFilterMenu({
   onOpenChange,
   onShowActiveOnlyChange,
 }: StandardSourceFilterMenuProps) {
+  const { t } = useTranslation('reader')
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
@@ -83,8 +85,8 @@ export function StandardSourceFilterMenu({
         className={joinClasses('standard-source-filter-trigger', showActiveOnly && 'is-active')}
         aria-expanded={open}
         aria-haspopup="menu"
-        aria-label="Open source filters"
-        title="Source filters"
+        aria-label={t('filter.openAria')}
+        title={t('filter.title')}
         onClick={() =>
           setOpen((current) => {
             const nextOpen = !current
@@ -98,7 +100,7 @@ export function StandardSourceFilterMenu({
       </button>
       {open ? (
         <div ref={popoverRef} className="standard-source-filter-popover" role="menu">
-          <span>Source view</span>
+          <span>{t('filter.sourceView')}</span>
           <button
             type="button"
             role="menuitemradio"
@@ -106,8 +108,8 @@ export function StandardSourceFilterMenu({
             className={!showActiveOnly ? 'is-selected' : undefined}
             onClick={() => selectSourceScope(false)}
           >
-            <strong>All sources</strong>
-            <small>{totalCount} feeds</small>
+            <strong>{t('filter.allSources')}</strong>
+            <small>{t('filter.allFeeds', { count: totalCount })}</small>
           </button>
           <button
             type="button"
@@ -116,17 +118,17 @@ export function StandardSourceFilterMenu({
             className={showActiveOnly ? 'is-selected' : undefined}
             onClick={() => selectSourceScope(true)}
           >
-            <strong>Active only</strong>
-            <small>{activeCount} live</small>
+            <strong>{t('filter.activeOnly')}</strong>
+            <small>{t('filter.activeLive', { count: activeCount })}</small>
           </button>
           <i />
           <button type="button" role="menuitem" onClick={() => runMenuAction(onExpandAll)}>
-            <strong>Expand groups</strong>
-            <small>Show every section</small>
+            <strong>{t('filter.expandGroups')}</strong>
+            <small>{t('filter.expandHint')}</small>
           </button>
           <button type="button" role="menuitem" onClick={() => runMenuAction(onCollapseAll)}>
-            <strong>Collapse groups</strong>
-            <small>Compact source list</small>
+            <strong>{t('filter.collapseGroups')}</strong>
+            <small>{t('filter.collapseHint')}</small>
           </button>
         </div>
       ) : null}

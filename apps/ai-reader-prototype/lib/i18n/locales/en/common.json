@@ -1,0 +1,23 @@
+{
+  "loading": {
+    "reader": "Loading reader workspace",
+    "aria": "Loading reader"
+  },
+  "localeSwitcher": {
+    "aria": "Switch interface language",
+    "zh": "中文",
+    "en": "EN"
+  },
+  "theme": {
+    "aria": "Reader theme",
+    "standard": "Standard",
+    "desk": "Desk"
+  },
+  "actions": {
+    "close": "Close",
+    "clear": "Clear",
+    "restore": "Restore",
+    "edit": "Edit",
+    "copied": "Copied"
+  }
+}

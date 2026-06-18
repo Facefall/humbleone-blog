@@ -8,14 +8,8 @@ const articleImages = [
   '/standard-media/builder-notes.svg',
 ]
 
-const sourceCategoryLabels: Record<string, string> = {
-  model_lab: 'AI Labs',
-  builder: 'Builders',
-  community: 'Community',
-  project_changelog: 'Runtime',
-  personal_repo: 'Repos',
-  research: 'Research',
-}
+
+export { formatIssueDate } from '../lib/i18n/formatters'
 
 export function flattenArticles(brief: DailyBrief): StandardArticle[] {
   return brief.sections.flatMap((section) =>
@@ -39,7 +33,7 @@ export function buildSources(brief: DailyBrief): StandardSource[] {
 
     return {
       ...source,
-      category: sourceCategoryLabels[source.sourceFamily ?? 'research'] ?? 'General',
+      category: source.sourceFamily ?? 'general',
       active: source.health !== 'failed' && source.state !== 'stale',
       contentType: registry?.contentType ?? (source.sourceFamily === 'community' ? 'social' : 'article'),
       feedSourceId,
@@ -50,23 +44,6 @@ export function buildSources(brief: DailyBrief): StandardSource[] {
 
 export function getSelectedArticle(articles: StandardArticle[], selectedItemId: string) {
   return articles.find((article) => article.id === selectedItemId) ?? articles[0]
-}
-
-export function formatIssueDate(value: string) {
-  const date = new Date(value)
-
-  if (Number.isNaN(date.getTime())) {
-    return value.toUpperCase()
-  }
-
-  return new Intl.DateTimeFormat('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
-    .format(date)
-    .toUpperCase()
 }
 
 export function normalizeFilter(value: string) {

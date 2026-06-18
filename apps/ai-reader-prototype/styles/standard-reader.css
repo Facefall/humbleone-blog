@@ -335,6 +335,46 @@
   gap: 2px;
 }
 
+.locale-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.standard-topbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.standard-topbar-actions .locale-switcher {
+  padding: 2px;
+  background: rgba(30, 30, 30, 0.7);
+  border: 1px solid var(--standard-border);
+  border-radius: 3px;
+}
+
+.standard-topbar-actions .locale-switcher button {
+  height: 24px;
+  padding: 0 9px;
+  color: var(--standard-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 2px;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition:
+    color 150ms ease,
+    background 150ms ease;
+}
+
+.standard-topbar-actions .locale-switcher button:hover,
+.standard-topbar-actions .locale-switcher button.is-active {
+  color: var(--standard-primary);
+  background: rgba(240, 165, 0, 0.1);
+}
+
 .standard-topbar-actions .reader-theme-toggle {
   padding: 2px;
   background: rgba(30, 30, 30, 0.7);

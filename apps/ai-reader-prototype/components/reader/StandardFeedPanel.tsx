@@ -1,5 +1,8 @@
+'use client'
+
 import { useEffect, useRef } from 'react'
 import type { CSSProperties } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   ArrowPathIcon,
   BookmarkIcon,
@@ -64,6 +67,7 @@ export function StandardFeedPanel({
   onShareArticle,
   onToggleUnreadOnly,
 }: StandardFeedPanelProps) {
+  const { t } = useTranslation('reader')
   const listRef = useRef<HTMLDivElement>(null)
   const selectedCardRef = useRef<HTMLElement | null>(null)
   const articleMotionKey = articles.map((article) => article.id).join('|')
@@ -90,53 +94,47 @@ export function StandardFeedPanel({
   }, [selectedArticleId])
 
   return (
-    <section className="standard-feed-panel" aria-label="Today feed">
+    <section className="standard-feed-panel" aria-label={t('feed.aria')}>
       <header className="standard-feed-toolbar">
         <div className="standard-feed-toolbar-status">
-          <span>{showUnreadOnly ? 'Unread feed' : 'Feed list'}</span>
-          <small>
-            {articles.length} shown · {unreadCount} unread
-          </small>
+          <span>{showUnreadOnly ? t('feed.unreadList') : t('feed.list')}</span>
+          <small>{t('feed.shownUnread', { shown: articles.length, unread: unreadCount })}</small>
           {feedNotice ? <strong aria-live="polite">{feedNotice}</strong> : null}
         </div>
-        <div className="standard-feed-toolbar-actions" aria-label="Feed actions">
-          <button
-            type="button"
-            aria-label="Refresh feed"
-            onClick={onRefreshFeed}
-          >
+        <div className="standard-feed-toolbar-actions" aria-label={t('feed.actionsAria')}>
+          <button type="button" aria-label={t('feed.refreshAria')} onClick={onRefreshFeed}>
             <ArrowPathIcon />
-            <span>Refresh</span>
+            <span>{t('feed.refresh')}</span>
           </button>
           <button
             type="button"
             className={showUnreadOnly ? 'is-active' : undefined}
-            aria-label="Show unread articles only"
+            aria-label={t('feed.unreadOnlyAria')}
             aria-pressed={showUnreadOnly}
             onClick={() => onToggleUnreadOnly?.(!showUnreadOnly)}
           >
             <EyeIcon />
-            <span>Unread only</span>
+            <span>{t('feed.unreadOnly')}</span>
           </button>
-          <button type="button" aria-label="Mark all visible articles as read" onClick={onMarkAllRead}>
+          <button type="button" aria-label={t('feed.markReadAria')} onClick={onMarkAllRead}>
             <CheckCircleIcon />
-            <span>Mark read</span>
+            <span>{t('feed.markRead')}</span>
           </button>
         </div>
       </header>
       {selectedSourceId ? (
         <div className="standard-filter-strip">
-          <span>Source filter active</span>
+          <span>{t('feed.sourceFilterActive')}</span>
           <button type="button" onClick={onClearSource}>
-            Clear
+            {t('common:actions.clear')}
           </button>
         </div>
       ) : null}
       {!articlePanelOpen ? (
         <div className="standard-detail-restore-strip">
-          <span>Article detail minimized</span>
+          <span>{t('feed.detailMinimized')}</span>
           <button type="button" onClick={onRestoreArticlePanel}>
-            Restore
+            {t('common:actions.restore')}
           </button>
         </div>
       ) : null}
@@ -167,7 +165,9 @@ export function StandardFeedPanel({
                 onClick={() => onSelectArticle(article.id)}
                 onKeyDown={(event) => activateFromKeyboard(event, () => onSelectArticle(article.id))}
               >
-                {article.importance === 'breaking' ? <span className="standard-breaking">● Breaking</span> : null}
+                {article.importance === 'breaking' ? (
+                  <span className="standard-breaking">● {t('feed.breaking')}</span>
+                ) : null}
                 <div className="standard-feed-card-body">
                   <div className="standard-feed-card-main">
                     <div className="standard-feed-meta">
@@ -183,7 +183,7 @@ export function StandardFeedPanel({
                         <ClockIcon />
                         {article.relativeTime}
                       </span>
-                      <span>{article.readTime}m read</span>
+                      <span>{t('feed.readTime', { minutes: article.readTime })}</span>
                       <span>
                         <MessageIcon />
                         {article.commentCount}
@@ -195,12 +195,12 @@ export function StandardFeedPanel({
                       ) : null}
                     </footer>
                   </div>
-                  <div className="standard-feed-actions" aria-label="Article actions">
+                  <div className="standard-feed-actions" aria-label={t('feed.actionsAriaArticle')}>
                     <button
                       type="button"
                       className={isSaved ? 'is-active' : undefined}
-                      aria-label={isSaved ? 'Remove from saved for later' : 'Save for later'}
-                      title={isSaved ? 'Remove from saved' : 'Save for later'}
+                      aria-label={isSaved ? t('feed.unsaveAria') : t('feed.saveAria')}
+                      title={isSaved ? t('feed.unsave') : t('feed.save')}
                       aria-pressed={isSaved}
                       onClick={(event) => {
                         event.stopPropagation()
@@ -212,8 +212,8 @@ export function StandardFeedPanel({
                     <button
                       type="button"
                       className={isFavorited ? 'is-active is-favorite' : 'is-favorite'}
-                      aria-label={isFavorited ? 'Remove from favorites' : 'Favorite article'}
-                      title={isFavorited ? 'Remove favorite' : 'Favorite for long-term reference'}
+                      aria-label={isFavorited ? t('feed.unfavoriteAria') : t('feed.favoriteAria')}
+                      title={isFavorited ? t('feed.unfavoriteTitle') : t('feed.favoriteTitle')}
                       aria-pressed={isFavorited}
                       onClick={(event) => {
                         event.stopPropagation()
@@ -224,7 +224,7 @@ export function StandardFeedPanel({
                     </button>
                     <button
                       type="button"
-                      aria-label="Copy article link"
+                      aria-label={t('feed.shareAria')}
                       onClick={(event) => {
                         event.stopPropagation()
                         onShareArticle?.(article.id)
@@ -232,7 +232,7 @@ export function StandardFeedPanel({
                     >
                       <ShareIcon />
                     </button>
-                    <a href={article.url} aria-label="Open original article" onClick={(event) => event.stopPropagation()}>
+                    <a href={article.url} aria-label={t('feed.openOriginalAria')} onClick={(event) => event.stopPropagation()}>
                       <ExternalIcon />
                     </a>
                   </div>
@@ -242,8 +242,8 @@ export function StandardFeedPanel({
           })
         ) : (
           <div className="standard-empty-state">
-            <strong>No matching signals</strong>
-            <span>Clear the source filter or search query.</span>
+            <strong>{t('feed.emptyTitle')}</strong>
+            <span>{t('feed.emptyHint')}</span>
           </div>
         )}
       </div>

@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslation } from 'react-i18next'
 import type { PrototypeVariant } from './TodayPrototype'
 
 const variants: PrototypeVariant[] = ['A', 'B', 'C']
@@ -15,6 +16,7 @@ function nextVariant(current: PrototypeVariant, direction: -1 | 1) {
 
 export function PrototypeSwitcher({ variant }: { variant: PrototypeVariant }) {
   const router = useRouter()
+  const { t } = useTranslation('sourceDesk')
   const isProduction = process.env.NODE_ENV === 'production'
 
   function setVariant(next: PrototypeVariant) {
@@ -62,16 +64,16 @@ export function PrototypeSwitcher({ variant }: { variant: PrototypeVariant }) {
   }
 
   return (
-    <div className="prototype-switcher" aria-label="Prototype variant switcher">
+    <div className="prototype-switcher" aria-label={t('switcher.aria')}>
       <button
         type="button"
         className="switcher-arrow"
-        aria-label="Previous prototype variant"
+        aria-label={t('switcher.prevAria')}
         onClick={() => setVariant(nextVariant(variant, -1))}
       >
         ‹
       </button>
-      <div className="switcher-tabs" role="tablist" aria-label="Prototype variants">
+      <div className="switcher-tabs" role="tablist" aria-label={t('switcher.tabsAria')}>
         {variants.map((item) => (
           <button
             key={item}
@@ -88,7 +90,7 @@ export function PrototypeSwitcher({ variant }: { variant: PrototypeVariant }) {
       <button
         type="button"
         className="switcher-arrow"
-        aria-label="Next prototype variant"
+        aria-label={t('switcher.nextAria')}
         onClick={() => setVariant(nextVariant(variant, 1))}
       >
         ›

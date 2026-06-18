@@ -1,0 +1,67 @@
+{
+  "variants": {
+    "A": {
+      "label": "Variant A",
+      "title": "Editor desk / timeline / newspaper",
+      "note": "Balanced three-pane structure for validating the current product direction."
+    },
+    "B": {
+      "label": "Variant B",
+      "title": "Timeline-led morning sort",
+      "note": "The central daily list dominates while the source desk compresses into tactile source slips."
+    },
+    "C": {
+      "label": "Variant C",
+      "title": "Newspaper-first reading room",
+      "note": "The reader owns the surface while source and timeline context stay visible at the edge."
+    }
+  },
+  "sourceDesk": {
+    "title": "Source Desk",
+    "sectionLabel": "Source Desk",
+    "watchedSources": "Watched Sources",
+    "pinnedNotes": "Pinned Notes",
+    "quickAccess": "Quick Access",
+    "dragToPin": "Drag to pin",
+    "deskAria": "Source Desk"
+  },
+  "timeline": {
+    "aria": "Today Timeline",
+    "label": "Today Timeline",
+    "morningOrder": "Morning signal order",
+    "todayPicks": "Today picks",
+    "filed": "{{count}} filed"
+  },
+  "newspaper": {
+    "aria": "Newspaper Reader",
+    "label": "Newspaper Reader",
+    "emptyTitle": "No items yet",
+    "emptyHint": "The reader pane is waiting for today's brief.",
+    "sourceProof": "Source Proof"
+  },
+  "deskTools": {
+    "aria": "Desk tools",
+    "pinAria": "Pin source desk",
+    "pinTitle": "Pin source desk",
+    "signalAria": "Mark high signal",
+    "signalTitle": "Mark high signal"
+  },
+  "preview": {
+    "aria": "High signal preview card",
+    "title": "High Signal",
+    "meta": "{{count}} sources · high update cadence · broad coverage",
+    "strengthStrong": "Strong",
+    "strengthMedium": "Medium",
+    "strengthWeak": "Weak",
+    "viewAll": "View all"
+  },
+  "slip": {
+    "fallbackDescription": "High-signal AI engineering source"
+  },
+  "switcher": {
+    "aria": "Prototype variant switcher",
+    "prevAria": "Previous prototype variant",
+    "nextAria": "Next prototype variant",
+    "tabsAria": "Prototype variants"
+  }
+}

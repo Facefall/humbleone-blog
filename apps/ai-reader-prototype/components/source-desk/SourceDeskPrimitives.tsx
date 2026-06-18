@@ -1,4 +1,7 @@
+'use client'
+
 import type { ComponentPropsWithoutRef, ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Slot } from '@radix-ui/react-slot'
 import * as Tooltip from '@radix-ui/react-tooltip'
 
@@ -220,10 +223,22 @@ const HeaderToolButton = styled('button', {
 })
 
 export function DeskHeaderTools() {
+  const { t } = useTranslation('sourceDesk')
+
   return (
-    <HeaderToolsRoot aria-label="Desk tools">
-      <HeaderToolButton type="button" title="Pin source desk" aria-label="Pin source desk" data-tool="pin" />
-      <HeaderToolButton type="button" title="Mark high signal" aria-label="Mark high signal" data-tool="signal" />
+    <HeaderToolsRoot aria-label={t('deskTools.aria')}>
+      <HeaderToolButton
+        type="button"
+        title={t('deskTools.pinTitle')}
+        aria-label={t('deskTools.pinAria')}
+        data-tool="pin"
+      />
+      <HeaderToolButton
+        type="button"
+        title={t('deskTools.signalTitle')}
+        aria-label={t('deskTools.signalAria')}
+        data-tool="signal"
+      />
     </HeaderToolsRoot>
   )
 }
@@ -776,6 +791,7 @@ export function SourceSlip({
   density?: 'regular' | 'compact'
   mode?: 'folder' | 'source'
 }) {
+  const { t } = useTranslation('sourceDesk')
   const symbol = mode === 'folder' ? folderSymbol(source) : null
 
   return (
@@ -795,7 +811,9 @@ export function SourceSlip({
           {source.count ? <strong>{source.count}</strong> : null}
         </SlipTitleRow>
         {mode === 'source' ? (
-          <SlipDescription>{source.description ?? source.sourceFamily ?? 'High-signal AI engineering source'}</SlipDescription>
+          <SlipDescription>
+            {source.description ?? source.sourceFamily ?? t('slip.fallbackDescription')}
+          </SlipDescription>
         ) : null}
       </SlipCopy>
       {mode === 'source' ? (
@@ -1109,27 +1127,29 @@ const PreviewFooter = styled('footer', {
 })
 
 export function HighSignalPreviewCard({ items }: { items: ClippingItem[] }) {
+  const { t } = useTranslation('sourceDesk')
   const tones = ['strong', 'mid', 'weak'] as const
+  const strengthLabels = [t('preview.strengthStrong'), t('preview.strengthMedium'), t('preview.strengthWeak')]
 
   return (
-    <PreviewRoot aria-label="High signal preview card">
+    <PreviewRoot aria-label={t('preview.aria')}>
       <PreviewTitle>
-        <strong>High Signal</strong>
+        <strong>{t('preview.title')}</strong>
         <span>{items.length}</span>
       </PreviewTitle>
-      <PreviewMeta>{items.length} 个来源 · 更新频率高 · 覆盖广</PreviewMeta>
+      <PreviewMeta>{t('preview.meta', { count: items.length })}</PreviewMeta>
       <PreviewList>
         {items.map((item, index) => (
           <PreviewRow key={item.id}>
             <PreviewIcon aria-hidden="true">{item.title.slice(0, 1)}</PreviewIcon>
             <span>{item.title}</span>
             <MiniSignal tone={tones[index % tones.length]} aria-hidden="true" />
-            <span>{index === 0 ? '强' : index === 1 ? '中' : '弱'}</span>
+            <span>{strengthLabels[index % strengthLabels.length]}</span>
           </PreviewRow>
         ))}
       </PreviewList>
       <PreviewFooter>
-        <span>查看全部</span>
+        <span>{t('preview.viewAll')}</span>
         <span>→</span>
       </PreviewFooter>
     </PreviewRoot>

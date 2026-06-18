@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useGsapDisclosure } from '../../hooks/useGsapMotion'
 import type { StandardSource } from '../../types/reader'
 import { joinClasses } from '../../utils/readerUtils'
@@ -23,7 +24,9 @@ export function StandardSourceGroup({
   onSelectSource,
   onToggle,
 }: StandardSourceGroupProps) {
+  const { t } = useTranslation('reader')
   const bodyRef = useRef<HTMLDivElement>(null)
+  const categoryLabel = t(`categories.${category}`, { defaultValue: category })
 
   useGsapDisclosure(bodyRef, !collapsed, {
     childSelector: '.standard-source-row',
@@ -35,11 +38,11 @@ export function StandardSourceGroup({
       <h2>
         <button
           type="button"
-          aria-label={`${collapsed ? 'Expand' : 'Collapse'} ${category} sources`}
+          aria-label={collapsed ? t('group.expandAria', { category: categoryLabel }) : t('group.collapseAria', { category: categoryLabel })}
           aria-expanded={!collapsed}
           onClick={() => onToggle(category)}
         >
-          <span>{category}</span>
+          <span>{categoryLabel}</span>
           <ChevronDownIcon />
         </button>
       </h2>

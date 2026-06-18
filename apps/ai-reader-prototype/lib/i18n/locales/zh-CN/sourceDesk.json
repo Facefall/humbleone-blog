@@ -1,0 +1,67 @@
+{
+  "variants": {
+    "A": {
+      "label": "变体 A",
+      "title": "编辑台 / 时间线 / 报纸",
+      "note": "平衡三栏结构，用于验证当前产品方向。"
+    },
+    "B": {
+      "label": "变体 B",
+      "title": "时间线主导的晨间排序",
+      "note": "中央日报列表占主导，来源工作台压缩为触感来源纸条。"
+    },
+    "C": {
+      "label": "变体 C",
+      "title": "报纸优先阅读室",
+      "note": "阅读器占据主界面，来源与时间线上下文保留在边缘。"
+    }
+  },
+  "sourceDesk": {
+    "title": "来源工作台",
+    "sectionLabel": "来源工作台",
+    "watchedSources": "关注来源",
+    "pinnedNotes": "钉住笔记",
+    "quickAccess": "快速访问",
+    "dragToPin": "拖拽以固定",
+    "deskAria": "来源工作台"
+  },
+  "timeline": {
+    "aria": "今日时间线",
+    "label": "今日时间线",
+    "morningOrder": "晨间信号排序",
+    "todayPicks": "今日精选",
+    "filed": "{{count}} 条归档"
+  },
+  "newspaper": {
+    "aria": "报纸阅读器",
+    "label": "报纸阅读器",
+    "emptyTitle": "暂无条目",
+    "emptyHint": "阅读器面板正在等待今日简报。",
+    "sourceProof": "来源证据"
+  },
+  "deskTools": {
+    "aria": "工作台工具",
+    "pinAria": "固定来源工作台",
+    "pinTitle": "固定来源工作台",
+    "signalAria": "标记高信号",
+    "signalTitle": "标记高信号"
+  },
+  "preview": {
+    "aria": "高信号预览卡",
+    "title": "高信号",
+    "meta": "{{count}} 个来源 · 更新频率高 · 覆盖广",
+    "strengthStrong": "强",
+    "strengthMedium": "中",
+    "strengthWeak": "弱",
+    "viewAll": "查看全部"
+  },
+  "slip": {
+    "fallbackDescription": "高信号 AI 工程来源"
+  },
+  "switcher": {
+    "aria": "原型变体切换",
+    "prevAria": "上一个原型变体",
+    "nextAria": "下一个原型变体",
+    "tabsAria": "原型变体"
+  }
+}
