@@ -285,7 +285,7 @@ Folo 的公开定位是 AI RSS Reader，强调让 AI 帮用户阅读互联网、
 | 深度调研  | `/research`      | 发起主题调研、查看调研队列和历史报告                                           |
 | 调研报告页 | `/research/:id`  | 阅读证据化中文调研报告                                                  |
 | 文章阅读页 | `/items/:id`     | 阅读原文摘要、AI 重组、来源证据和标签                                         |
-| 搜索页   | `/search`        | 搜索源、文章、标签、作者                                                 |
+| 内容搜索页 | `/search`        | 搜索源、文章、标签、作者、摘要和已抓取内容；第一版不承诺完整网页全文搜索                       |
 
 
 ### 6.2 博客消费页面
@@ -651,7 +651,46 @@ evidence_level: official
 summary_zh: ...
 why_it_matters: ...
 raw_payload_ref: raw/codewhale/2026-06-16.json
+state:
+  read_at: null
+  saved_at: null
+  favorited_at: null
+  archived_at: null
 ```
+
+### 10.1 阅读状态语义
+
+第一版必须明确区分 `保存`、`收藏` 和 `书签`，避免把三者都做成“mark item”的同义动作。
+
+| 状态 | 作用 | 主要对象 | 生命周期 |
+| --- | --- | --- | --- |
+| `saved` / 保存 | 稍后读，表示这篇文章需要稍后处理或继续阅读 | feed item | 短期状态，可以清空或归档 |
+| `favorited` / 收藏 | 长期保留，表示这篇文章有复盘、周报、知识库或研究价值 | feed item | 长期状态，默认保留 |
+| `bookmark` / 书签 | 固定入口，表示某个视图、source、topic 或搜索条件需要快速访问 | source、topic、search view、feed view | 导航状态，可随时调整 |
+
+文章列表第一版只暴露两个主动作：
+
+- `保存`：稍后读。
+- `收藏`：长期保留。
+
+`书签` 不作为文章收藏的同义词，优先用于固定 source、topic、search view 或 feed view。
+
+### 10.2 内容搜索边界
+
+第一版搜索命名为 `内容搜索`，不命名为 `全文搜索`。
+
+搜索范围包括：
+
+- title
+- source name
+- author
+- summary
+- raw excerpt
+- tags
+- topic
+- RSSHub feed 中已经带回来的 content 字段
+
+第一版不承诺抓取原网页全文，也不承诺所有文章都能按完整正文命中。后续如果加入 Readability、正文抽取和正文索引，再升级为真正的全文搜索。
 
 ## 11. Daily Compiler
 
@@ -719,11 +758,14 @@ Daily Compiler 从 Feed Store 读取：
 ### 12.1 MVP 必须有
 
 - Source Registry 文档化
-- Endpoint 配置
+- Endpoint 配置，第一版由项目配置文件手动维护，不提供用户新增订阅源 UI
 - 5-8 个个人精选 source family
-- 至少 3 种 adapter：`official_rss`、`github_feed`、`rsshub`
+- 先以 RSSHub feed 作为主要订阅来源；官方 RSS / GitHub feed 可作为已知稳定源保留
 - Feed item 归一化
 - 去重和状态记录
+- 阅读状态：`read`、`saved`、`favorited`、`archived`
+- 书签对象：source、topic、search view、feed view
+- 内容搜索：标题、来源、作者、摘要、标签、topic、已抓取内容字段
 - 每日 3-8 条日报生成
 - Reader App 的 Today / Sources / Item 页面设计
 - Blog Markdown export
@@ -736,7 +778,9 @@ Daily Compiler 从 Feed Store 读取：
 - 个性化推荐
 - 评论
 - 移动 App
-- 复杂全文搜索
+- 完整网页全文搜索
+- 新增订阅源 UI
+- 类似 Folo Discover 的自动识别、发现和导入流程
 - 自动全文翻译
 - 视频自动转写
 - 开源发布
