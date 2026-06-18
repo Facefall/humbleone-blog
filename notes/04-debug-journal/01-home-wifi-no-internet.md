@@ -174,6 +174,106 @@ powershell -ExecutionPolicy Bypass -File .\wifi-doctor.ps1 -IntervalSeconds 10
 
 ## 追踪日志
 
+### 2026-06-18
+
+下载 GitHub Release 字体包时，Chrome 里出现下载速度先升到 100KB/s、200KB/s、300KB/s，随后几分钟内稳定下降到 40KB/s 到 60KB/s，甚至阶段性显示 0KB/s。
+
+目标文件是 GitHub Release Asset 中的 `SarasaMonoSC-TTF-1.0.39.7z`。该下载链接是 GitHub 生成的临时签名 URL，带有过期时间；因此如果长时间低速下载，链接过期后也可能导致下载失败。
+
+现场检查：
+
+- 当前本地网关 `192.168.1.1` ping 正常，短样本未出现明显丢包。
+- `github.com` 和 `release-assets.githubusercontent.com` DNS 解析正常，解析结果经 Mihomo 映射到 `198.18.0.x`。
+- 默认公网出口仍经过 Mihomo。
+- 对 GitHub Release Asset 做 10MB 分段下载测试，30 秒只下载约 1MB。
+
+复现数据：
+
+```text
+请求范围：0-10485759
+HTTP 状态：206 Partial Content
+30 秒下载量：约 1,013,759 bytes
+平均速度：约 33KB/s
+结果：超时
+```
+
+观察到的下载曲线与 Chrome 一致：开始阶段可以到几十 KB/s 或更高，但很快稳定在 30KB/s 到 60KB/s 区间。
+
+新的判断：
+
+1. 这不是 Chrome 进度条假象，命令行下载也复现了低速。
+2. 这次不是 DNS 解析失败；DNS 和 TCP 连接都能建立。
+3. 慢点主要出现在 GitHub Release Asset / Azure Blob 这条长连接下载链路上。
+4. 可能原因包括 Mihomo 当前节点到 GitHub Release Assets/CDN 质量差、GitHub Release Asset 单连接被限速、CDN 到当前出口拥塞，以及 2.4GHz 中继链路放大长连接抖动。
+5. 该类大文件下载不适合继续依赖 Chrome 单线程下载。
+
+临时处置建议：
+
+1. 优先更换 Mihomo 节点，选择对 GitHub / release-assets / Azure Blob 更稳定的节点。
+2. 使用多线程下载器，而不是 Chrome 单连接下载。
+3. 如果链接已长时间挂起，回 GitHub Release 页面重新点击下载，获取新的临时签名 URL。
+4. 当前不要关闭 Mihomo/TUN；它仍在帮助 GitHub 域名解析和出口转发。
+
+推荐命令：
+
+```powershell
+aria2c -x 16 -s 16 -k 1M "下载链接"
+```
+
+如果没有 `aria2c`，可以使用 Motrix、IDM 或 Free Download Manager，将 GitHub Release Asset 链接粘进去，并开启 8 到 16 线程。
+
+后续判断标准：
+
+- 换节点后同一文件速度明显提升：主因是 Mihomo 节点 / 出口链路。
+- 多线程下载显著提升：主因是单连接链路限速或拥塞。
+- 所有节点和多线程都慢：再考虑 GitHub Release Asset 当前 CDN 对本地网络质量差，或 2.4GHz 中继链路对大文件长连接影响较大。
+
+同日还出现 Win11 GUI 间歇性完全无响应：鼠标仍可移动，但窗口切换、鼠标点击、任务栏和 UI 元素在十几秒到数分钟内没有响应。
+
+这类现象先不归入 Wi-Fi 链路问题。鼠标能动说明系统没有彻底死机，更像桌面 Shell、DWM、显卡驱动、输入队列，或本机进程调度压力导致 UI 响应被饿死。
+
+现场检查：
+
+- 当前同时存在大量 Electron / Chromium / Node / WebView 类进程。
+- `node.exe`、Chrome、Cursor、Codex、`msedgewebview2` 合计占用较多内存与线程。
+- 采样时 CPU 总占用不一定打满，但 `Processor Queue Length` 曾达到 100 级别，说明可运行线程排队异常。
+- 事件日志中出现 ASUS 组件崩溃，例如 `AsusDownloadAgent.exe`、`ArmourySocketServer.exe`。
+- 系统中存在虚拟显示 / 远控相关设备，例如 Oray IDD Driver；这类组件也可能影响桌面显示链路。
+
+临时恢复动作：
+
+```powershell
+Stop-Process -Name explorer -Force
+Start-Process explorer.exe
+```
+
+如果卡顿时怀疑是显卡显示链路，可以先按：
+
+```text
+Win + Ctrl + Shift + B
+```
+
+这会触发 Windows 重置图形驱动显示链路，屏幕可能短暂闪黑。
+
+新增监控脚本：
+
+```powershell
+cd D:\Documents\home_wifi_doctor
+.\ui-freeze-watch.ps1 -DurationMinutes 30 -IntervalSeconds 1
+```
+
+脚本会写入：
+
+- `logs/ui-freeze-watch-*.csv`
+- `logs/ui-freeze-snapshots-*`
+
+后续判断标准：
+
+- 如果卡顿时 `Processor Queue Length` 持续很高：优先减少 Node / Chrome / Cursor / Codex / WebView 进程数量，排查进程调度压力。
+- 如果卡顿时 DWM / Explorer 异常：优先重启 Explorer，并排查显卡驱动、虚拟显示、壁纸软件。
+- 如果 ASUS 组件持续崩溃：临时退出或禁用 Armoury Crate / ASUS 后台组件做对照实验。
+- 如果关闭 Wallpaper Engine、ASUS、Oray 相关组件后明显改善：主因更可能在本机 GUI / 驱动 / 常驻组件，而不是网络。
+
 ### 2026-06-16
 
 网络再次出现波动时做了现场排查。
