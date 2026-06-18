@@ -1,33 +1,29 @@
 'use client'
 
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { StandardLibraryFilter, StandardSource } from '../../types/reader'
-import { BookmarkIcon, StarIcon } from './ReaderIcons'
+import type { StandardLibraryFilter } from '../../types/reader'
+import { BookmarkIcon, Cog8ToothIcon, StarIcon } from './ReaderIcons'
+import { StandardReaderSettingsDialog } from './StandardReaderSettingsDialog'
 
 type StandardSourceInspectorProps = {
-  sources: StandardSource[]
   libraryCounts?: Record<StandardLibraryFilter, number>
   libraryFilter?: StandardLibraryFilter | null
   onSelectLibraryFilter?: (filter: StandardLibraryFilter) => void
 }
 
 export function StandardSourceInspector({
-  sources,
   libraryCounts = { bookmarks: 0, favorites: 0 },
   libraryFilter = null,
   onSelectLibraryFilter,
 }: StandardSourceInspectorProps) {
   const { t } = useTranslation('reader')
-  const activeCount = sources.filter((source) => source.active).length
-  const failedCount = sources.filter((source) => source.health === 'failed').length
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   return (
     <section className="standard-source-inspector" aria-label={t('inspector.overviewAria')}>
       <header>
         <span>{t('inspector.quickAccess')}</span>
-        <strong>
-          {activeCount}/{sources.length}
-        </strong>
       </header>
       <div className="standard-quick-access-list" aria-label={t('inspector.quickAccessAria')}>
         <button
@@ -50,18 +46,20 @@ export function StandardSourceInspector({
           <span>{t('inspector.favorites')}</span>
           <b>{libraryCounts.favorites}</b>
         </button>
-      </div>
-      <div className="standard-source-stat-grid">
-        <span>
-          {t('inspector.active')}
-          <b>{activeCount}</b>
-        </span>
-        <span>
-          {t('inspector.failed')}
-          <b>{failedCount}</b>
-        </span>
+        <button
+          type="button"
+          className={settingsOpen ? 'is-active' : undefined}
+          aria-haspopup="dialog"
+          aria-expanded={settingsOpen}
+          onClick={() => setSettingsOpen(true)}
+        >
+          <Cog8ToothIcon />
+          <span>{t('inspector.settings')}</span>
+          <b>{t('inspector.settingsMeta')}</b>
+        </button>
       </div>
       <p>{t('inspector.overviewHint')}</p>
+      <StandardReaderSettingsDialog currentTheme="standard" open={settingsOpen} onOpenChange={setSettingsOpen} />
     </section>
   )
 }

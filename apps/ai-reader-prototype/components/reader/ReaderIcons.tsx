@@ -15,6 +15,7 @@ export {
   ClipboardDocumentIcon as CopyIcon,
   ClockIcon,
   Cog6ToothIcon,
+  Cog8ToothIcon,
   DocumentTextIcon,
   EllipsisHorizontalIcon,
   EyeIcon,

@@ -68,7 +68,7 @@ export function ReaderAppClient() {
       {theme === 'source-desk' ? (
         <TodayPrototype brief={brief} variant={variant} />
       ) : (
-        <StandardReaderPrototype brief={brief} showThemeSwitch />
+        <StandardReaderPrototype brief={brief} />
       )}
     </I18nProvider>
   )
