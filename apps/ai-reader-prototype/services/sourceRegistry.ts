@@ -1,6 +1,7 @@
 import type { EvidenceLevel, SourceFamily } from '../lib/prototype-data'
 
 export type FetchMethod = 'official_rss' | 'official_api' | 'rsshub' | 'custom_scrape' | 'manual'
+export type SourceContentType = 'article' | 'social' | 'image' | 'video'
 
 export type SourceRegistryRecord = {
   sourceId: string
@@ -11,6 +12,7 @@ export type SourceRegistryRecord = {
   language: 'zh-CN' | 'en' | 'mixed'
   officialUrl: string
   fetchMethod: FetchMethod
+  contentType: SourceContentType
   adapter: string
   updateFrequency: string
   evidenceLevel: EvidenceLevel
@@ -28,6 +30,7 @@ export const sourceRegistry: Record<string, SourceRegistryRecord> = {
     language: 'en',
     officialUrl: 'https://www.anthropic.com/engineering',
     fetchMethod: 'official_rss',
+    contentType: 'article',
     adapter: 'anthropic.engineering.feed',
     updateFrequency: 'daily check',
     evidenceLevel: 'official',
@@ -43,6 +46,7 @@ export const sourceRegistry: Record<string, SourceRegistryRecord> = {
     language: 'zh-CN',
     officialUrl: 'https://github.com',
     fetchMethod: 'official_api',
+    contentType: 'article',
     adapter: 'github.releases-and-commits',
     updateFrequency: 'daily check',
     evidenceLevel: 'github',
@@ -58,6 +62,7 @@ export const sourceRegistry: Record<string, SourceRegistryRecord> = {
     language: 'zh-CN',
     officialUrl: 'https://waylandz.com',
     fetchMethod: 'official_rss',
+    contentType: 'article',
     adapter: 'site.rss',
     updateFrequency: 'daily check',
     evidenceLevel: 'builder',
@@ -73,6 +78,7 @@ export const sourceRegistry: Record<string, SourceRegistryRecord> = {
     language: 'en',
     officialUrl: 'https://news.ycombinator.com',
     fetchMethod: 'rsshub',
+    contentType: 'social',
     adapter: 'rsshub.hackernews.search',
     updateFrequency: 'twice daily',
     evidenceLevel: 'community',
@@ -88,6 +94,7 @@ export const sourceRegistry: Record<string, SourceRegistryRecord> = {
     language: 'en',
     officialUrl: 'https://openai.com/blog',
     fetchMethod: 'official_rss',
+    contentType: 'article',
     adapter: 'openai.blog.feed',
     updateFrequency: 'daily check',
     evidenceLevel: 'official',
@@ -103,6 +110,7 @@ export const sourceRegistry: Record<string, SourceRegistryRecord> = {
     language: 'mixed',
     officialUrl: 'https://docs.rsshub.app',
     fetchMethod: 'rsshub',
+    contentType: 'article',
     adapter: 'rsshub.legacy.route',
     updateFrequency: 'disabled',
     evidenceLevel: 'rss',
