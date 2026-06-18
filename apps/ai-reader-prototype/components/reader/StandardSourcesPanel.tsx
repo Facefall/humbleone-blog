@@ -1,8 +1,12 @@
 'use client'
 
-import { useState } from 'react'
-import { joinClasses } from './readerUtils'
-import type { StandardSource } from './standardReaderTypes'
+import { useMemo } from 'react'
+import { useSourcePanelPreferences } from '../../hooks/useSourcePanelPreferences'
+import type { StandardSource } from '../../types/reader'
+import { joinClasses } from '../../utils/readerUtils'
+import { ArrowLeftStartOnRectangleIcon, ChevronDownIcon } from './ReaderIcons'
+import { StandardSourceFilterMenu } from './StandardSourceFilterMenu'
+import { StandardSourceInspector } from './StandardSourceInspector'
 
 type StandardSourcesPanelProps = {
   sources: StandardSource[]
@@ -19,28 +23,16 @@ export function StandardSourcesPanel({
   onCollapse,
   onSelectSource,
 }: StandardSourcesPanelProps) {
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
-  const [showActiveOnly, setShowActiveOnly] = useState(false)
+  const groupNames = useMemo(() => [...new Set(sources.map((source) => source.category))], [sources])
+  const sourcePanelPreferences = useSourcePanelPreferences(groupNames)
+  const { collapsedGroups, showActiveOnly } = sourcePanelPreferences
+  const selectedSource = sources.find((source) => source.feedSourceId === selectedSourceId)
   const visibleSources = showActiveOnly ? sources.filter((source) => source.active) : sources
   const grouped = visibleSources.reduce<Record<string, StandardSource[]>>((acc, source) => {
     acc[source.category] ??= []
     acc[source.category].push(source)
     return acc
   }, {})
-
-  function toggleGroup(category: string) {
-    setCollapsedGroups((current) => {
-      const nextGroups = new Set(current)
-
-      if (nextGroups.has(category)) {
-        nextGroups.delete(category)
-        return nextGroups
-      }
-
-      nextGroups.add(category)
-      return nextGroups
-    })
-  }
 
   return (
     <aside className="standard-sources-panel" aria-label="Sources">
@@ -50,18 +42,16 @@ export function StandardSourcesPanel({
           <small>
             {showActiveOnly ? visibleSources.length : activeSources}/{sources.length}
           </small>
-          <button
-            type="button"
-            className={showActiveOnly ? 'is-active' : undefined}
-            aria-label="Filter active sources"
-            aria-pressed={showActiveOnly}
-            title="Filter active sources"
-            onClick={() => setShowActiveOnly((current) => !current)}
-          >
-            <FilterIcon />
-          </button>
+          <StandardSourceFilterMenu
+            activeCount={activeSources}
+            totalCount={sources.length}
+            showActiveOnly={showActiveOnly}
+            onCollapseAll={sourcePanelPreferences.actions.collapseAllGroups}
+            onExpandAll={sourcePanelPreferences.actions.expandAllGroups}
+            onShowActiveOnlyChange={sourcePanelPreferences.actions.setShowActiveOnly}
+          />
           <button type="button" aria-label="Collapse sources panel" onClick={onCollapse}>
-            ⇤
+            <ArrowLeftStartOnRectangleIcon />
           </button>
         </div>
       </header>
@@ -76,10 +66,10 @@ export function StandardSourcesPanel({
                   type="button"
                   aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} ${category} sources`}
                   aria-expanded={!isCollapsed}
-                  onClick={() => toggleGroup(category)}
+                  onClick={() => sourcePanelPreferences.actions.toggleGroup(category)}
                 >
                   <span>{category}</span>
-                  <ChevronIcon />
+                  <ChevronDownIcon />
                 </button>
               </h2>
               <div className="standard-source-group-body">
@@ -105,22 +95,7 @@ export function StandardSourcesPanel({
           )
         })}
       </div>
+      <StandardSourceInspector sources={sources} selectedSource={selectedSource} />
     </aside>
-  )
-}
-
-function FilterIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 16 16">
-      <path d="M2.5 4h11L9.3 8.6v3.1l-2.5 1.1V8.6L2.5 4Z" />
-    </svg>
-  )
-}
-
-function ChevronIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 16 16">
-      <path d="M4.5 6 8 9.5 11.5 6" />
-    </svg>
   )
 }

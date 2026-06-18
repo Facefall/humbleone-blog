@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type {
   CSSProperties,
   PointerEvent as ReactPointerEvent,
@@ -9,14 +9,16 @@ import type {
 
 const collapsedSourceWidth = 50
 const resizerWidth = 6
-const feedDefaultWidth = 660
-const feedMinWidth = 420
-const feedMaxWidth = 760
-const sourceDefaultWidth = 294
-const sourceMinWidth = 210
-const sourceMaxWidth = 380
-const sourceCollapseWidth = 165
-const articleMinWidth = 480
+const feedDefaultWidth = 560
+const feedMinWidth = 360
+const feedMaxWidth = 680
+const sourceDefaultWidth = 260
+const sourceMinWidth = 224
+const sourceMaxWidth = 340
+const sourceCollapseWidth = 180
+const articleMinWidth = 560
+const articleCollapsedWidth = 64
+const fallbackWorkspaceWidth = 1600
 
 export type ResizableReaderLayoutControls = {
   sourcesCollapsed: boolean
@@ -28,6 +30,7 @@ export type ResizableReaderLayoutControls = {
 }
 
 type ResizableReaderLayoutProps = {
+  articlePanelOpen?: boolean
   renderLeft: (controls: ResizableReaderLayoutControls) => ReactNode
   feed: ReactNode
   renderArticle: (controls: ResizableReaderLayoutControls) => ReactNode
@@ -42,6 +45,7 @@ function joinClasses(...classes: Array<string | false | undefined>) {
 }
 
 export function ResizableReaderLayout({
+  articlePanelOpen = true,
   renderLeft,
   feed,
   renderArticle,
@@ -51,14 +55,27 @@ export function ResizableReaderLayout({
   const [feedWidth, setFeedWidth] = useState(feedDefaultWidth)
   const [sourcesCollapsed, setSourcesCollapsed] = useState(false)
   const [dragging, setDragging] = useState<'sources' | 'article' | null>(null)
+  const [workspaceWidth, setWorkspaceWidth] = useState(fallbackWorkspaceWidth)
+
+  useEffect(() => {
+    function measureWorkspace() {
+      setWorkspaceWidth(workspaceRef.current?.getBoundingClientRect().width ?? window.innerWidth)
+    }
+
+    measureWorkspace()
+    window.addEventListener('resize', measureWorkspace)
+
+    return () => window.removeEventListener('resize', measureWorkspace)
+  }, [])
 
   function getLeftWidth() {
     return sourcesCollapsed ? collapsedSourceWidth : sourcesWidth
   }
 
   function getMaxFeedWidth(leftWidth = getLeftWidth()) {
-    const workspaceWidth = workspaceRef.current?.getBoundingClientRect().width ?? window.innerWidth
-    const maxByArticle = workspaceWidth - leftWidth - articleMinWidth - resizerWidth * 2
+    const measuredWorkspaceWidth = workspaceRef.current?.getBoundingClientRect().width ?? workspaceWidth
+    const rightWidth = articlePanelOpen ? articleMinWidth : articleCollapsedWidth
+    const maxByArticle = measuredWorkspaceWidth - leftWidth - rightWidth - resizerWidth * 2
 
     return Math.max(feedMinWidth, Math.min(feedMaxWidth, maxByArticle))
   }
@@ -140,6 +157,7 @@ export function ResizableReaderLayout({
       className={joinClasses(
         'standard-workspace',
         sourcesCollapsed && 'is-sources-collapsed',
+        !articlePanelOpen && 'is-article-panel-closed',
         dragging === 'sources' && 'is-resizing-sources',
         dragging === 'article' && 'is-resizing-article',
       )}

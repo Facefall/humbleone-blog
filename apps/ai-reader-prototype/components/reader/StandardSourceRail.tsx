@@ -1,4 +1,14 @@
-import { joinClasses } from './readerUtils'
+import type { ComponentType, SVGProps } from 'react'
+import { joinClasses } from '../../utils/readerUtils'
+import {
+  BookOpenIcon,
+  ChartBarIcon,
+  Cog6ToothIcon,
+  NewspaperIcon,
+  RadioIcon,
+  RectangleStackIcon,
+  RssIcon,
+} from './ReaderIcons'
 
 type StandardSourceRailProps = {
   selectedMode: string
@@ -6,11 +16,13 @@ type StandardSourceRailProps = {
   onSelectMode: (mode: string) => void
 }
 
-const railItems = [
-  { id: 'sources', label: 'Sources', glyph: '▣' },
-  { id: 'signals', label: 'Signals', glyph: '◔' },
-  { id: 'trends', label: 'Trends', glyph: '⌁' },
-  { id: 'radio', label: 'Radio', glyph: '◎' },
+type RailIcon = ComponentType<SVGProps<SVGSVGElement>>
+
+const railItems: Array<{ id: string; label: string; Icon: RailIcon }> = [
+  { id: 'sources', label: 'Sources', Icon: RectangleStackIcon },
+  { id: 'signals', label: 'Signals', Icon: RssIcon },
+  { id: 'trends', label: 'Trends', Icon: ChartBarIcon },
+  { id: 'radio', label: 'Radio', Icon: RadioIcon },
 ]
 
 export function StandardSourceRail({
@@ -20,7 +32,9 @@ export function StandardSourceRail({
 }: StandardSourceRailProps) {
   return (
     <nav className="standard-icon-rail" aria-label="Reader modes">
-      <div className="standard-rail-mark">▣</div>
+      <div className="standard-rail-mark">
+        <NewspaperIcon />
+      </div>
       {railItems.map((item) => (
         <button
           key={item.id}
@@ -34,15 +48,15 @@ export function StandardSourceRail({
           title={item.label}
           onClick={() => onSelectMode(item.id)}
         >
-          {item.glyph}
+          <item.Icon />
         </button>
       ))}
       <div className="standard-rail-spacer" />
       <button type="button" aria-label="Library" title="Library">
-        ▱
+        <BookOpenIcon />
       </button>
       <button type="button" aria-label="Settings" title="Settings">
-        ⚙
+        <Cog6ToothIcon />
       </button>
     </nav>
   )

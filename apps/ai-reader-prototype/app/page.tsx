@@ -43,5 +43,5 @@ export default async function Page({
     return <TodayPrototype brief={dailyBrief} variant={variant} />
   }
 
-  return <StandardReaderPrototype brief={dailyBrief} />
+  return <StandardReaderPrototype brief={dailyBrief} showThemeSwitch />
 }

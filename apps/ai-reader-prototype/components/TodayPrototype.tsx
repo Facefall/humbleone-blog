@@ -1,5 +1,6 @@
 import type { DailyBrief, FeedItem, SourceDeskItem } from '../lib/prototype-data'
 import { PrototypeSwitcher } from './PrototypeSwitcher'
+import { ReaderThemeToggle } from './ReaderThemeToggle'
 import {
   ClippingCard,
   DeskFooterAction,
@@ -69,7 +70,10 @@ export function TodayPrototype({
 
   return (
     <main className={`reader-shell variant-${variant.toLowerCase()}`}>
-      <PrototypeSwitcher variant={variant} />
+      <div className="prototype-controls" aria-label="Prototype controls">
+        <ReaderThemeToggle currentTheme="source-desk" />
+        <PrototypeSwitcher variant={variant} />
+      </div>
       <section className="prototype-masthead" aria-labelledby="prototype-title">
         <div>
           <p className="prototype-kicker">{copy.label}</p>
