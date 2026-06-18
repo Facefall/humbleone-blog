@@ -13,6 +13,7 @@ import {
 } from './ReaderIcons'
 import { activateFromKeyboard, joinClasses } from '../../utils/readerUtils'
 import type { StandardActionNotice, StandardArticle } from '../../types/reader'
+import { useGsapStaggerReveal } from '../../hooks/useGsapMotion'
 
 type StandardFeedPanelProps = {
   articles: StandardArticle[]
@@ -63,7 +64,26 @@ export function StandardFeedPanel({
   onShareArticle,
   onToggleUnreadOnly,
 }: StandardFeedPanelProps) {
+  const listRef = useRef<HTMLDivElement>(null)
   const selectedCardRef = useRef<HTMLElement | null>(null)
+  const articleMotionKey = articles.map((article) => article.id).join('|')
+  const actionNoticeMotionKey = actionNotice
+    ? `${actionNotice.articleId}:${actionNotice.label}:${actionNotice.tone}`
+    : null
+
+  useGsapStaggerReveal(listRef, articleMotionKey, {
+    selector: '.standard-feed-card',
+    duration: 0.22,
+    stagger: 0.018,
+    y: 7,
+  })
+  useGsapStaggerReveal(listRef, actionNoticeMotionKey, {
+    selector: '.standard-feed-card-status',
+    duration: 0.16,
+    scale: 0.94,
+    stagger: 0,
+    y: -2,
+  })
 
   useEffect(() => {
     selectedCardRef.current?.scrollIntoView({ block: 'nearest' })
@@ -120,7 +140,7 @@ export function StandardFeedPanel({
           </button>
         </div>
       ) : null}
-      <div className="standard-feed-list">
+      <div ref={listRef} className="standard-feed-list">
         {articles.length ? (
           articles.map((article, index) => {
             const isRead = readArticleIds.has(article.id)

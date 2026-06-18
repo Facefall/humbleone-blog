@@ -1,3 +1,7 @@
+'use client'
+
+import { useRef } from 'react'
+import { useGsapStaggerReveal } from '../../hooks/useGsapMotion'
 import type { StandardArticle, StandardFeedback } from '../../types/reader'
 import {
   BotIcon,
@@ -37,8 +41,33 @@ export function StandardArticlePanel({
   onSelectRelatedArticle,
   onToggleRelated,
 }: StandardArticlePanelProps) {
+  const panelRef = useRef<HTMLElement>(null)
+
+  useGsapStaggerReveal(panelRef, article.id, {
+    selector:
+      '.standard-article-context, .standard-article-lede, .standard-detail-image, .standard-summary-block, .standard-analysis-block, .standard-key-points, .standard-related-block',
+    duration: 0.24,
+    stagger: 0.026,
+    x: 10,
+    y: 0,
+  })
+  useGsapStaggerReveal(panelRef, copyStatus, {
+    selector: '.standard-copy-status',
+    duration: 0.16,
+    scale: 0.94,
+    stagger: 0,
+    y: -2,
+  })
+  useGsapStaggerReveal(panelRef, relatedOpen ? `${article.id}:related` : null, {
+    selector: '.standard-related-list button',
+    duration: 0.18,
+    stagger: 0.024,
+    x: 5,
+    y: 0,
+  })
+
   return (
-    <aside className="standard-article-panel" aria-label="Selected article">
+    <aside ref={panelRef} className="standard-article-panel" aria-label="Selected article">
       <header className="standard-article-context">
         <div>
           <span>{article.standardCategory}</span>

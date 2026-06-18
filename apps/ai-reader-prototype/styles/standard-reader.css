@@ -382,13 +382,14 @@
   --standard-feed-width: 560px;
   display: grid;
   grid-template-columns:
-    minmax(50px, var(--standard-left-width))
+    minmax(0, var(--standard-left-width))
     6px
     minmax(360px, var(--standard-feed-width))
     6px
     minmax(560px, 1fr);
   height: calc(100vh - 42px);
   min-height: 0;
+  transition: grid-template-columns 220ms ease;
 }
 
 .standard-workspace.is-sources-collapsed {
@@ -397,7 +398,7 @@
 
 .standard-workspace.is-article-panel-closed {
   grid-template-columns:
-    minmax(50px, var(--standard-left-width))
+    minmax(0, var(--standard-left-width))
     6px
     minmax(420px, 1fr)
     6px
@@ -412,6 +413,8 @@
   padding: 12px 0;
   background: #0a0a0a;
   border-right: 1px solid var(--standard-border);
+  transform-origin: left center;
+  will-change: transform, opacity;
 }
 
 .standard-rail-mark {
@@ -461,6 +464,19 @@
   box-shadow: inset 2px 0 0 var(--standard-primary);
 }
 
+.standard-icon-rail button.is-active.is-collapsed-anchor {
+  background:
+    linear-gradient(90deg, rgba(240, 165, 0, 0.18), rgba(240, 165, 0, 0.06)),
+    rgba(240, 165, 0, 0.12);
+  box-shadow:
+    inset 2px 0 0 var(--standard-primary),
+    0 0 18px rgba(240, 165, 0, 0.16);
+}
+
+.standard-icon-rail button.is-active.is-collapsed-anchor:active {
+  transform: scale(0.9) translateX(1px);
+}
+
 .standard-icon-rail button svg {
   width: 17px;
   height: 17px;
@@ -483,15 +499,23 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transform-origin: left center;
   transition:
     opacity 150ms ease,
     transform 150ms ease;
+  will-change: transform, opacity;
 }
 
 .standard-sources-panel.is-collapsed {
   opacity: 0;
   pointer-events: none;
   transform: translateX(-8px);
+}
+
+.standard-sources-panel.is-collapsing {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-12px) scale(0.965);
 }
 
 .standard-sources-panel > header {
@@ -822,10 +846,7 @@
 .standard-source-group-body {
   display: grid;
   gap: 0;
-}
-
-.standard-source-group.is-collapsed .standard-source-group-body {
-  display: none;
+  overflow: hidden;
 }
 
 .standard-source-row {
@@ -1228,12 +1249,11 @@
   border-bottom: 1px solid var(--standard-border);
   cursor: pointer;
   outline: 0;
-  animation: standard-card-enter 260ms ease both;
-  animation-delay: calc(var(--standard-card-index, 0) * 26ms);
   transition:
     background 160ms ease,
     box-shadow 160ms ease,
     transform 160ms ease;
+  will-change: transform, opacity;
 }
 
 .standard-feed-card::before {
@@ -1310,18 +1330,6 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   vertical-align: 2px;
-}
-
-@keyframes standard-card-enter {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .standard-breaking {
@@ -1526,7 +1534,7 @@
   overflow: auto;
   background: var(--standard-surface);
   scrollbar-width: none;
-  animation: standard-panel-enter 220ms ease both;
+  will-change: transform, opacity;
 }
 
 .standard-article-restore-panel {
@@ -1539,7 +1547,7 @@
     linear-gradient(180deg, rgba(240, 165, 0, 0.05), transparent 96px),
     var(--standard-surface);
   border-right: 1px solid var(--standard-border);
-  animation: standard-panel-enter 180ms ease both;
+  will-change: transform, opacity;
 }
 
 .standard-article-restore-panel button {
@@ -1626,16 +1634,6 @@
   flex-direction: column;
   gap: 8px;
   writing-mode: vertical-rl;
-}
-
-@keyframes standard-panel-enter {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
 }
 
 .standard-article-context {
@@ -1907,14 +1905,14 @@
 @media (max-width: 1180px) {
   .standard-workspace {
     grid-template-columns:
-      minmax(50px, var(--standard-left-width))
+      minmax(0, var(--standard-left-width))
       6px
       minmax(0, 1fr);
   }
 
   .standard-workspace.is-article-panel-closed {
     grid-template-columns:
-      minmax(50px, var(--standard-left-width))
+      minmax(0, var(--standard-left-width))
       6px
       minmax(0, 1fr);
   }

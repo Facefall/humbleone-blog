@@ -19,9 +19,11 @@ const sourceCollapseWidth = 180
 const articleMinWidth = 560
 const articleCollapsedWidth = 64
 const fallbackWorkspaceWidth = 1600
+const sourceCollapseAnimationMs = 220
 
 export type ResizableReaderLayoutControls = {
   sourcesCollapsed: boolean
+  sourcesCollapsing: boolean
   collapseSourcesPanel: () => void
   expandSourcesPanel: () => void
   toggleSourcesPanel: () => void
@@ -51,9 +53,11 @@ export function ResizableReaderLayout({
   renderArticle,
 }: ResizableReaderLayoutProps) {
   const workspaceRef = useRef<HTMLDivElement>(null)
+  const collapseTimerRef = useRef<number | null>(null)
   const [sourcesWidth, setSourcesWidth] = useState(sourceDefaultWidth)
   const [feedWidth, setFeedWidth] = useState(feedDefaultWidth)
   const [sourcesCollapsed, setSourcesCollapsed] = useState(false)
+  const [sourcesCollapsing, setSourcesCollapsing] = useState(false)
   const [dragging, setDragging] = useState<'sources' | 'article' | null>(null)
   const [workspaceWidth, setWorkspaceWidth] = useState(fallbackWorkspaceWidth)
 
@@ -68,7 +72,29 @@ export function ResizableReaderLayout({
     return () => window.removeEventListener('resize', measureWorkspace)
   }, [])
 
+  useEffect(
+    () => () => {
+      if (collapseTimerRef.current) {
+        window.clearTimeout(collapseTimerRef.current)
+      }
+    },
+    [],
+  )
+
+  function clearCollapseTimer() {
+    if (!collapseTimerRef.current) {
+      return
+    }
+
+    window.clearTimeout(collapseTimerRef.current)
+    collapseTimerRef.current = null
+  }
+
   function getLeftWidth() {
+    if (sourcesCollapsing) {
+      return 0
+    }
+
     return sourcesCollapsed ? collapsedSourceWidth : sourcesWidth
   }
 
@@ -81,16 +107,29 @@ export function ResizableReaderLayout({
   }
 
   function expandSourcesPanel() {
+    clearCollapseTimer()
+    setSourcesCollapsing(false)
     setSourcesCollapsed(false)
     setSourcesWidth((current) => clamp(current, sourceMinWidth, sourceMaxWidth))
   }
 
   function collapseSourcesPanel() {
-    setSourcesCollapsed(true)
+    if (sourcesCollapsed || sourcesCollapsing) {
+      return
+    }
+
+    clearCollapseTimer()
+    setSourcesCollapsing(true)
+    collapseTimerRef.current = window.setTimeout(() => {
+      setSourcesCollapsed(true)
+      setSourcesCollapsing(false)
+      collapseTimerRef.current = null
+    }, sourceCollapseAnimationMs)
   }
 
   const controls: ResizableReaderLayoutControls = {
     sourcesCollapsed,
+    sourcesCollapsing,
     collapseSourcesPanel,
     expandSourcesPanel,
     toggleSourcesPanel: () => {
@@ -125,6 +164,8 @@ export function ResizableReaderLayout({
         const nextWidth = startSourcesWidth + moveEvent.clientX - startX
 
         if (nextWidth < sourceCollapseWidth) {
+          clearCollapseTimer()
+          setSourcesCollapsing(false)
           setSourcesCollapsed(true)
           return
         }
@@ -157,6 +198,7 @@ export function ResizableReaderLayout({
       className={joinClasses(
         'standard-workspace',
         sourcesCollapsed && 'is-sources-collapsed',
+        sourcesCollapsing && 'is-sources-collapsing',
         !articlePanelOpen && 'is-article-panel-closed',
         dragging === 'sources' && 'is-resizing-sources',
         dragging === 'article' && 'is-resizing-article',

@@ -1,4 +1,8 @@
+'use client'
+
 import type { ComponentType, SVGProps } from 'react'
+import { useRef } from 'react'
+import { useGsapElementEntrance } from '../../hooks/useGsapMotion'
 import { joinClasses } from '../../utils/readerUtils'
 import {
   BookOpenIcon,
@@ -30,8 +34,17 @@ export function StandardSourceRail({
   sourcesCollapsed,
   onSelectMode,
 }: StandardSourceRailProps) {
+  const railRef = useRef<HTMLElement>(null)
+
+  useGsapElementEntrance(railRef, sourcesCollapsed, {
+    duration: 0.2,
+    scale: 0.96,
+    x: -10,
+    y: 0,
+  })
+
   return (
-    <nav className="standard-icon-rail" aria-label="Reader modes">
+    <nav ref={railRef} className="standard-icon-rail" aria-label="Reader modes">
       <div className="standard-rail-mark">
         <NewspaperIcon />
       </div>

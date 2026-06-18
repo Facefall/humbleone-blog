@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useGsapElementEntrance } from '../../hooks/useGsapMotion'
 import { joinClasses } from '../../utils/readerUtils'
 import { FunnelIcon } from './ReaderIcons'
 
@@ -10,6 +11,7 @@ type StandardSourceFilterMenuProps = {
   showActiveOnly: boolean
   onCollapseAll: () => void
   onExpandAll: () => void
+  onOpenChange?: (open: boolean) => void
   onShowActiveOnlyChange: (value: boolean) => void
 }
 
@@ -19,10 +21,18 @@ export function StandardSourceFilterMenu({
   showActiveOnly,
   onCollapseAll,
   onExpandAll,
+  onOpenChange,
   onShowActiveOnlyChange,
 }: StandardSourceFilterMenuProps) {
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const popoverRef = useRef<HTMLDivElement>(null)
+
+  useGsapElementEntrance(popoverRef, open, {
+    duration: 0.16,
+    scale: 0.98,
+    y: -6,
+  })
 
   useEffect(() => {
     if (!open) {
@@ -35,11 +45,13 @@ export function StandardSourceFilterMenu({
       }
 
       setOpen(false)
+      onOpenChange?.(false)
     }
 
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         setOpen(false)
+        onOpenChange?.(false)
       }
     }
 
@@ -50,16 +62,18 @@ export function StandardSourceFilterMenu({
       document.removeEventListener('pointerdown', onPointerDown)
       document.removeEventListener('keydown', onKeyDown)
     }
-  }, [open])
+  }, [onOpenChange, open])
 
   function selectSourceScope(activeOnly: boolean) {
     onShowActiveOnlyChange(activeOnly)
     setOpen(false)
+    onOpenChange?.(false)
   }
 
   function runMenuAction(action: () => void) {
     action()
     setOpen(false)
+    onOpenChange?.(false)
   }
 
   return (
@@ -71,12 +85,19 @@ export function StandardSourceFilterMenu({
         aria-haspopup="menu"
         aria-label="Open source filters"
         title="Source filters"
-        onClick={() => setOpen((current) => !current)}
+        onClick={() =>
+          setOpen((current) => {
+            const nextOpen = !current
+
+            onOpenChange?.(nextOpen)
+            return nextOpen
+          })
+        }
       >
         <FunnelIcon />
       </button>
       {open ? (
-        <div className="standard-source-filter-popover" role="menu">
+        <div ref={popoverRef} className="standard-source-filter-popover" role="menu">
           <span>Source view</span>
           <button
             type="button"

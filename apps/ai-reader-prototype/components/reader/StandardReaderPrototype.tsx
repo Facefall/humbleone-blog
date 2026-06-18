@@ -51,7 +51,7 @@ export function StandardReaderPrototype({ brief, initialState, showThemeSwitch =
       <ResizableReaderLayout
         articlePanelOpen={readerState.articlePanelOpen}
         renderLeft={(controls) => (
-          controls.sourcesCollapsed ? (
+          controls.sourcesCollapsed && !controls.sourcesCollapsing ? (
             <StandardSourceRail
               selectedMode={readerState.selectedRailMode}
               sourcesCollapsed={controls.sourcesCollapsed}
@@ -61,6 +61,7 @@ export function StandardReaderPrototype({ brief, initialState, showThemeSwitch =
             <StandardSourcesPanel
               sources={readerState.sources}
               activeSources={readerState.activeSources}
+              collapsing={controls.sourcesCollapsing}
               selectedSourceId={readerState.selectedSourceId}
               onCollapse={controls.collapseSourcesPanel}
               onSelectSource={readerState.actions.selectSource}

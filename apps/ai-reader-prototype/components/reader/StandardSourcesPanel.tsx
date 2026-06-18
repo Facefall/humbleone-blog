@@ -1,25 +1,29 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
+import countBy from 'lodash/countBy'
+import groupBy from 'lodash/groupBy'
+import uniq from 'lodash/uniq'
+import { useGsapElementEntrance, useGsapElementPulse } from '../../hooks/useGsapMotion'
 import { useSourcePanelPreferences } from '../../hooks/useSourcePanelPreferences'
 import type { SourceContentType } from '../../services/sourceRegistry'
 import type { StandardSource } from '../../types/reader'
-import { joinClasses } from '../../utils/readerUtils'
 import {
   ArrowLeftStartOnRectangleIcon,
   ChatBubbleLeftRightIcon,
-  ChevronDownIcon,
   DocumentTextIcon,
   PhotoIcon,
   PlayCircleIcon,
   Squares2X2Icon,
 } from './ReaderIcons'
 import { StandardSourceFilterMenu } from './StandardSourceFilterMenu'
+import { StandardSourceGroup } from './StandardSourceGroup'
 import { StandardSourceInspector } from './StandardSourceInspector'
 
 type StandardSourcesPanelProps = {
   sources: StandardSource[]
   activeSources: number
+  collapsing?: boolean
   selectedSourceId: string | null
   onCollapse: () => void
   onSelectSource: (sourceId: string) => void
@@ -38,35 +42,55 @@ const sourceContentTabs = [
 export function StandardSourcesPanel({
   sources,
   activeSources,
+  collapsing = false,
   selectedSourceId,
   onCollapse,
   onSelectSource,
 }: StandardSourcesPanelProps) {
+  const panelRef = useRef<HTMLElement>(null)
   const [selectedContentType, setSelectedContentType] = useState<SourceContentFilter>('all')
-  const groupNames = useMemo(() => [...new Set(sources.map((source) => source.category))], [sources])
+  const [filterMenuMotionKey, setFilterMenuMotionKey] = useState(0)
+  const groupNames = useMemo(() => uniq(sources.map((source) => source.category)), [sources])
   const sourcePanelPreferences = useSourcePanelPreferences(groupNames)
   const { collapsedGroups, showActiveOnly } = sourcePanelPreferences
   const selectedSource = sources.find((source) => source.feedSourceId === selectedSourceId)
-  const contentFilteredSources =
-    selectedContentType === 'all' ? sources : sources.filter((source) => source.contentType === selectedContentType)
-  const visibleSources = showActiveOnly
-    ? contentFilteredSources.filter((source) => source.active)
-    : contentFilteredSources
-  const contentCounts = sourceContentTabs.reduce<Record<SourceContentFilter, number>>(
-    (acc, tab) => {
-      acc[tab.id] = tab.id === 'all' ? sources.length : sources.filter((source) => source.contentType === tab.id).length
-      return acc
-    },
-    { all: 0, article: 0, social: 0, image: 0, video: 0 },
-  )
-  const grouped = visibleSources.reduce<Record<string, StandardSource[]>>((acc, source) => {
-    acc[source.category] ??= []
-    acc[source.category].push(source)
-    return acc
-  }, {})
+  const contentCounts = useMemo(() => {
+    const counts = countBy(sources, 'contentType') as Partial<Record<SourceContentType, number>>
+
+    return {
+      all: sources.length,
+      article: counts.article ?? 0,
+      image: counts.image ?? 0,
+      social: counts.social ?? 0,
+      video: counts.video ?? 0,
+    } satisfies Record<SourceContentFilter, number>
+  }, [sources])
+  const visibleSources = useMemo(() => {
+    const contentFilteredSources =
+      selectedContentType === 'all' ? sources : sources.filter((source) => source.contentType === selectedContentType)
+
+    return showActiveOnly ? contentFilteredSources.filter((source) => source.active) : contentFilteredSources
+  }, [selectedContentType, showActiveOnly, sources])
+  const grouped = useMemo(() => groupBy(visibleSources, 'category'), [visibleSources])
+
+  useGsapElementEntrance(panelRef, 'standard-sources-panel', {
+    duration: 0.22,
+    scale: 0.985,
+    x: -14,
+    y: 0,
+  })
+  useGsapElementPulse(panelRef, filterMenuMotionKey, {
+    duration: 0.18,
+    scale: 0.988,
+    x: -2,
+  })
 
   return (
-    <aside className="standard-sources-panel" aria-label="Sources">
+    <aside
+      ref={panelRef}
+      className={`standard-sources-panel${collapsing ? ' is-collapsing' : ''}`}
+      aria-label="Sources"
+    >
       <header>
         <div className="standard-sources-panel-heading">
           <span>Sources</span>
@@ -80,6 +104,7 @@ export function StandardSourcesPanel({
               showActiveOnly={showActiveOnly}
               onCollapseAll={sourcePanelPreferences.actions.collapseAllGroups}
               onExpandAll={sourcePanelPreferences.actions.expandAllGroups}
+              onOpenChange={() => setFilterMenuMotionKey((current) => current + 1)}
               onShowActiveOnlyChange={sourcePanelPreferences.actions.setShowActiveOnly}
             />
             <button type="button" aria-label="Collapse sources panel" onClick={onCollapse}>
@@ -113,38 +138,15 @@ export function StandardSourcesPanel({
           const isCollapsed = collapsedGroups.has(category)
 
           return (
-            <section key={category} className={joinClasses('standard-source-group', isCollapsed && 'is-collapsed')}>
-              <h2>
-                <button
-                  type="button"
-                  aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} ${category} sources`}
-                  aria-expanded={!isCollapsed}
-                  onClick={() => sourcePanelPreferences.actions.toggleGroup(category)}
-                >
-                  <span>{category}</span>
-                  <ChevronDownIcon />
-                </button>
-              </h2>
-              <div className="standard-source-group-body">
-                {items.map((source) => (
-                  <button
-                    key={source.id}
-                    type="button"
-                    className={joinClasses(
-                      'standard-source-row',
-                      source.active && 'is-active',
-                      selectedSourceId === source.feedSourceId && 'is-selected',
-                    )}
-                    aria-pressed={selectedSourceId === source.feedSourceId}
-                    onClick={() => onSelectSource(source.feedSourceId)}
-                  >
-                    <span className="standard-source-dot" />
-                    <span>{source.label}</span>
-                    {source.count ? <small>{source.count}</small> : null}
-                  </button>
-                ))}
-              </div>
-            </section>
+            <StandardSourceGroup
+              key={category}
+              category={category}
+              collapsed={isCollapsed}
+              items={items}
+              selectedSourceId={selectedSourceId}
+              onSelectSource={onSelectSource}
+              onToggle={sourcePanelPreferences.actions.toggleGroup}
+            />
           )
         })}
       </div>
