@@ -53,9 +53,9 @@ export const { styled, css, keyframes, theme, getCssText, globalCss } = createSt
       round: '999px',
     },
     fonts: {
-      serif: "'Newsreader', 'Iowan Old Style', Baskerville, Georgia, 'Times New Roman', serif",
-      mono: "'Courier Prime', 'American Typewriter', 'Courier New', Courier, monospace",
-      note: "'Segoe Print', KaiTi, STKaiti, Georgia, serif",
+      serif: 'var(--font-serif)',
+      mono: 'var(--font-mono)',
+      note: 'var(--font-note)',
     },
     fontSizes: {
       xs: '0.62rem',

@@ -3,6 +3,7 @@ import type { Decorator } from '@storybook/react'
 import { I18nextProvider } from 'react-i18next'
 
 import '../app/globals.css'
+import { fontVariables } from '../lib/fonts'
 import i18n from '../lib/i18n/client'
 import { type AppLocale, supportedLocales } from '../lib/i18n/settings'
 
@@ -15,8 +16,10 @@ const withI18n: Decorator = (Story, context) => {
 
   return (
     <I18nextProvider i18n= { i18n } >
-    <Story />
-    </I18nextProvider>
+    <div className={ fontVariables }>
+      <Story />
+      </div>
+      </I18nextProvider>
   )
 }
 

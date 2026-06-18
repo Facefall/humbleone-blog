@@ -964,6 +964,7 @@ const NoteTitle = styled('strong', {
   color: '#2f2116',
   fontFamily: '$note',
   fontSize: '$md',
+  fontStyle: 'italic',
 })
 
 const NoteBody = styled('p', {
@@ -972,6 +973,7 @@ const NoteBody = styled('p', {
   fontFamily: '$note',
   fontSize: '$md',
   lineHeight: 1.35,
+  fontStyle: 'italic',
 })
 
 export function PinnedNoteCard({ note }: { note: PinnedNote }) {
@@ -1060,6 +1062,7 @@ const PreviewMeta = styled('p', {
   fontFamily: '$note',
   fontSize: '$sm',
   lineHeight: 1.45,
+  fontStyle: 'italic',
 })
 
 const PreviewList = styled('div', {
@@ -1076,6 +1079,7 @@ const PreviewRow = styled('div', {
   color: '$ink',
   fontFamily: '$note',
   fontSize: '$sm',
+  fontStyle: 'italic',
 })
 
 const PreviewIcon = styled('span', {
@@ -1124,6 +1128,7 @@ const PreviewFooter = styled('footer', {
   color: '#5e3b27',
   fontFamily: '$note',
   fontSize: '$sm',
+  fontStyle: 'italic',
 })
 
 export function HighSignalPreviewCard({ items }: { items: ClippingItem[] }) {

@@ -1,4 +1,8 @@
 :root {
+  --font-serif: var(--font-newsreader), var(--font-noto-serif-sc), 'Source Han Serif SC', Georgia, serif;
+  --font-mono: var(--font-courier-prime), var(--font-sarasa-mono-sc), 'Courier New', Courier, monospace;
+  --font-note: var(--font-newsreader), var(--font-noto-serif-sc), 'Source Han Serif SC', Georgia, serif;
+  --font-terminal: var(--font-jetbrains-mono), var(--font-sarasa-mono-sc), Consolas, 'Liberation Mono', monospace;
   --desk-bg: #160b07;
   --desk-bg-soft: #21110b;
   --desk-bg-raised: #2a1912;

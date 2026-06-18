@@ -17,7 +17,7 @@ body {
 }
 
 body {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-serif);
 }
 
 button,
@@ -38,7 +38,7 @@ button {
   gap: 10px;
   color: var(--standard-text);
   background: #080808;
-  font-family: 'IBM Plex Mono', 'JetBrains Mono', Consolas, monospace;
+  font-family: var(--font-terminal);
   letter-spacing: 0.08em;
 }
 
