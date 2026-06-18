@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { useGsapDisclosure } from '../../hooks/useGsapMotion'
 import type { SourceCollection, StandardSource } from '../../types/reader'
 import { joinClasses } from '../../utils/readerUtils'
-import { ChevronDownIcon } from './ReaderIcons'
+import { ChevronDownIcon, PlusCircleIcon } from './ReaderIcons'
 import { StandardSourceCollectionMenu } from './StandardSourceCollectionMenu'
 import { StandardSourceRowMenu } from './StandardSourceRowMenu'
 
@@ -112,7 +112,10 @@ export function StandardSourceGroup({
             onClick={() => onAddSources(collection)}
           >
             <span className="is-empty-label">{t('group.empty')}</span>
-            <span className="is-action-label">{t('sourceManagement.addSources')}</span>
+            <span className="is-action-content" aria-hidden="true">
+              <PlusCircleIcon className="is-action-icon" />
+              <span className="is-action-label">{t('sourceManagement.addSources')}</span>
+            </span>
           </button>
         )}
       </div>

@@ -33,7 +33,7 @@
   gap: 16px;
   height: 42px;
   padding: 0 16px;
-  background: #0a0a0a;
+  background: #11100f;
   border-bottom: 1px solid var(--standard-border);
 }
 
@@ -476,7 +476,7 @@
   align-items: center;
   gap: 6px;
   padding: 12px 0;
-  background: #0a0a0a;
+  background: #11100f;
   border-right: 1px solid var(--standard-border);
   transform-origin: left center;
   will-change: transform, opacity;
@@ -1250,7 +1250,9 @@
 }
 
 .standard-source-group {
-  padding: 0 0 8px;
+  --source-group-action-column: 30px;
+
+  padding: 0 8px 8px;
   transition:
     background 150ms ease,
     box-shadow 150ms ease;
@@ -1266,7 +1268,7 @@
 
 .standard-source-group-header {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 28px;
+  grid-template-columns: minmax(0, 1fr) var(--source-group-action-column);
   align-items: center;
   width: 100%;
   min-height: 28px;
@@ -1278,6 +1280,7 @@
   justify-content: space-between;
   gap: 7px;
   min-width: 0;
+  width: 100%;
   height: 100%;
   padding: 5px 6px 5px 12px;
   color: #c7b997;
@@ -1370,7 +1373,7 @@
 
 .standard-source-row-shell {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 28px;
+  grid-template-columns: minmax(0, 1fr) var(--source-group-action-column);
   align-items: center;
   min-height: 28px;
   position: relative;
@@ -1434,35 +1437,73 @@
 .standard-source-empty-slot {
   display: grid;
   place-items: center;
-  width: calc(100% - 24px);
+  width: 97%;
   min-height: 32px;
-  margin: 4px 12px 2px;
+  margin: 4px var(--source-group-action-column) 2px 0;
   padding: 8px;
   color: rgba(147, 141, 130, 0.74);
   background: rgba(255, 255, 255, 0.018);
   border: 1px dashed rgba(199, 185, 151, 0.18);
   border-radius: 4px;
-  font-size: 9px;
-  letter-spacing: 0.045em;
+  font-size: 0;
   text-align: center;
   cursor: pointer;
   transition:
-    color 150ms ease,
     background 150ms ease,
     border-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+.standard-source-empty-slot .is-empty-label {
+  color: inherit;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.045em;
+  line-height: 1.2;
+  transition:
+    color 150ms ease,
+    text-shadow 150ms ease;
+}
+
+.standard-source-empty-slot .is-action-content {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: var(--standard-primary);
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.045em;
+  line-height: 1.2;
+  text-shadow: 0 0 12px rgba(240, 165, 0, 0.24);
+}
+
+.standard-source-empty-slot .is-action-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  color: currentColor;
+  filter: drop-shadow(0 0 8px rgba(240, 165, 0, 0.26));
+  stroke-width: 1.8;
+  transition:
+    filter 150ms ease,
     transform 150ms ease;
 }
 
 .standard-source-empty-slot .is-action-label {
-  display: none;
+  color: currentColor;
+  font: inherit;
 }
 
 .standard-source-empty-slot:hover,
 .standard-source-empty-slot:focus-visible,
 .standard-source-empty-slot:active {
-  color: var(--standard-primary);
-  background: rgba(240, 165, 0, 0.075);
-  border-color: rgba(240, 165, 0, 0.26);
+  background: rgba(240, 165, 0, 0.07);
+  border-color: rgba(240, 165, 0, 0.32);
+  box-shadow:
+    inset 0 0 0 1px rgba(240, 165, 0, 0.08),
+    0 0 18px rgba(240, 165, 0, 0.08);
   outline: 0;
 }
 
@@ -1472,14 +1513,18 @@
   display: none;
 }
 
-.standard-source-empty-slot:hover .is-action-label,
-.standard-source-empty-slot:focus-visible .is-action-label,
-.standard-source-empty-slot:active .is-action-label {
-  display: inline;
+.standard-source-empty-slot:hover .is-action-content,
+.standard-source-empty-slot:focus-visible .is-action-content,
+.standard-source-empty-slot:active .is-action-content {
+  display: inline-flex;
 }
 
 .standard-source-empty-slot:active {
   transform: scale(0.99);
+}
+
+.standard-source-empty-slot:active .is-action-icon {
+  transform: scale(0.94);
 }
 
 .standard-sources-panel .standard-source-row {
@@ -1686,7 +1731,7 @@
 .standard-feed-panel {
   display: flex;
   flex-direction: column;
-  background: #0d0d0d;
+  background: var(--standard-surface);
 }
 
 .standard-resizer {
@@ -1948,42 +1993,6 @@
   color: var(--standard-muted);
 }
 
-.standard-feed-state-marks {
-  position: absolute;
-  top: 10px;
-  right: 12px;
-  z-index: 1;
-  display: inline-flex;
-  gap: 5px;
-  align-items: center;
-  pointer-events: none;
-}
-
-.standard-feed-state-marks span {
-  display: inline-grid;
-  place-items: center;
-}
-
-.standard-feed-state-marks .mark-bookmark {
-  width: 8px;
-  height: 13px;
-  background: rgba(240, 165, 0, 0.84);
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%);
-  box-shadow: 0 0 10px rgba(240, 165, 0, 0.16);
-}
-
-.standard-feed-state-marks .mark-favorite {
-  width: 17px;
-  height: 17px;
-  color: var(--standard-positive);
-  background: rgba(52, 211, 153, 0.1);
-  border: 1px solid rgba(52, 211, 153, 0.18);
-  border-radius: 50%;
-  font-size: 10px;
-  line-height: 1;
-  box-shadow: 0 0 12px rgba(52, 211, 153, 0.14);
-}
-
 .standard-breaking {
   display: inline-flex;
   margin-bottom: 8px;
@@ -2127,18 +2136,11 @@
   flex: 0 0 auto;
   flex-direction: column;
   gap: 6px;
-  opacity: 0;
-  transform: translateX(3px);
+  opacity: 1;
+  transform: translateX(0);
   transition:
     opacity 150ms ease,
     transform 150ms ease;
-}
-
-.standard-feed-card:hover .standard-feed-actions,
-.standard-feed-card.is-selected .standard-feed-actions,
-.standard-feed-card:focus-within .standard-feed-actions {
-  opacity: 1;
-  transform: translateX(0);
 }
 
 .standard-feed-actions button,
@@ -2151,11 +2153,23 @@
   background: transparent;
   border: 0;
   border-radius: 3px;
+  opacity: 0;
   text-decoration: none;
   transition:
     color 150ms ease,
     background 150ms ease,
+    opacity 150ms ease,
     transform 150ms ease;
+}
+
+.standard-feed-card:hover .standard-feed-actions button,
+.standard-feed-card:hover .standard-feed-actions a,
+.standard-feed-card.is-selected .standard-feed-actions button,
+.standard-feed-card.is-selected .standard-feed-actions a,
+.standard-feed-card:focus-within .standard-feed-actions button,
+.standard-feed-card:focus-within .standard-feed-actions a,
+.standard-feed-actions button.is-active {
+  opacity: 1;
 }
 
 .standard-feed-actions button:hover,

@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import {
   ArrowPathIcon,
   BookmarkIcon,
+  BookmarkSolidIcon,
   CheckCircleIcon,
   ClockIcon,
   ExternalIcon,
@@ -183,10 +184,6 @@ export function StandardFeedPanel({
                 onClick={() => onSelectArticle(article.id)}
                 onKeyDown={(event) => activateFromKeyboard(event, () => onSelectArticle(article.id))}
                 >
-                <div className="standard-feed-state-marks" aria-hidden="true">
-                  {isSaved ? <span className="mark-bookmark" /> : null}
-                  {isFavorited ? <span className="mark-favorite">★</span> : null}
-                </div>
                 {article.importance === 'breaking' ? (
                   <span className="standard-breaking">● {t('feed.breaking')}</span>
                 ) : null}
@@ -229,7 +226,7 @@ export function StandardFeedPanel({
                         onSaveArticle?.(article.id)
                       }}
                     >
-                      <BookmarkIcon />
+                      {isSaved ? <BookmarkSolidIcon /> : <BookmarkIcon />}
                     </button>
                     <button
                       type="button"

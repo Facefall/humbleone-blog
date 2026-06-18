@@ -27,6 +27,7 @@ export {
   PencilSquareIcon,
   PhotoIcon,
   PlayCircleIcon,
+  PlusCircleIcon,
   PlusIcon,
   RadioIcon,
   RectangleStackIcon,
@@ -39,3 +40,5 @@ export {
   TrashIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline'
+
+export { BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid'
