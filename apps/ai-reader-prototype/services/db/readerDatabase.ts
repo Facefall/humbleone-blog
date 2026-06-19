@@ -132,6 +132,22 @@ function initializeReaderDatabase(db: Database.Database) {
     CREATE UNIQUE INDEX IF NOT EXISTS idx_feed_items_source_url
       ON feed_items(source_id, url);
 
+    CREATE TABLE IF NOT EXISTS reader_article_states (
+      article_id TEXT PRIMARY KEY,
+      source_id TEXT,
+      url TEXT NOT NULL,
+      title TEXT NOT NULL,
+      saved INTEGER NOT NULL DEFAULT 0,
+      favorited INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_reader_article_states_saved
+      ON reader_article_states(saved, updated_at DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_reader_article_states_favorited
+      ON reader_article_states(favorited, updated_at DESC);
+
     CREATE VIRTUAL TABLE IF NOT EXISTS article_search USING fts5(
       article_id UNINDEXED,
       url UNINDEXED,
