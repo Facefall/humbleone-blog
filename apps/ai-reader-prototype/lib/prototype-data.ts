@@ -19,6 +19,7 @@ export type SourceHealth = "fresh" | "quiet" | "stale" | "failed";
 export type ReadingSkin = "postmodern_newspaper" | "compact_digest" | "source_proof";
 
 export type DailySectionKind = "hard_news" | "cases" | "interesting";
+export type SourceContentType = "article" | "social" | "image" | "video";
 
 export type SourceDeskItemKind =
   | "navigation"
@@ -43,9 +44,19 @@ export type SourceDeskItem = {
   count?: number;
   sourceFamily?: SourceFamily;
   evidenceLevel?: EvidenceLevel;
+  contentType?: SourceContentType;
+  topicTags?: string[];
+  adapter?: string;
   health: SourceHealth;
   state: SourceDeskItemState;
   description?: string;
+};
+
+export type SourceCollectionConfig = {
+  id: string;
+  name: string;
+  sourceIds: string[];
+  systemCategory?: string;
 };
 
 export type PinnedNote = {
@@ -111,6 +122,7 @@ export type SourceDeskData = {
   deskDate: string;
   navigation: SourceDeskItem[];
   sourceGroups: SourceDeskItem[];
+  sourceCollections?: SourceCollectionConfig[];
   sourceSlips: SourceDeskItem[];
   pinnedNotes: PinnedNote[];
   quickAccess: ClippingItem[];
