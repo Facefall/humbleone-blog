@@ -11,13 +11,13 @@ import {
   ClockIcon,
   ExternalIcon,
   EyeIcon,
-  MessageIcon,
   ShareIcon,
   StarIcon,
 } from './ReaderIcons'
 import { activateFromKeyboard, joinClasses } from '../../utils/readerUtils'
 import type { StandardActionNotice, StandardArticle, StandardLibraryFilter } from '../../types/reader'
 import { useGsapStaggerReveal } from '../../hooks/useGsapMotion'
+import { ReaderAsyncBlock } from './ReaderAsyncBlock'
 
 type StandardFeedPanelProps = {
   articles: StandardArticle[]
@@ -144,6 +144,15 @@ export function StandardFeedPanel({
           </button>
         </div>
       </header>
+      {feedRefreshing ? (
+        <div className="standard-feed-refresh-block">
+          <ReaderAsyncBlock
+            tone="compact"
+            label={t('feed.refreshing')}
+            detail={t('feed.refreshLoadingHint')}
+          />
+        </div>
+      ) : null}
       {selectedSourceId ? (
         <div className="standard-filter-strip">
           <span>{t('feed.sourceFilterActive')}</span>
@@ -205,18 +214,10 @@ export function StandardFeedPanel({
                     </div>
                     <h2>{article.title}</h2>
                     {article.importance !== 'standard' ? <p>{article.summary}</p> : null}
-                    {article.imageUrl && article.importance !== 'standard' ? (
-                      <img src={article.imageUrl} alt="" loading="lazy" />
-                    ) : null}
                     <footer>
                       <span>
                         <ClockIcon />
                         {article.relativeTime}
-                      </span>
-                      <span>{t('feed.readTime', { minutes: article.readTime })}</span>
-                      <span>
-                        <MessageIcon />
-                        {article.commentCount}
                       </span>
                       {articleNotice ? (
                         <span className={`standard-feed-card-status tone-${articleNotice.tone}`} aria-live="polite">

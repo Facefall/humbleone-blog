@@ -18,6 +18,7 @@ import {
   ThumbsDownIcon,
   ThumbsUpIcon,
 } from './ReaderIcons'
+import { ReaderAsyncBlock } from './ReaderAsyncBlock'
 
 type ArticleDetailView = 'original' | 'translation' | 'brief'
 
@@ -116,10 +117,8 @@ export function StandardArticlePanel({
             <ClockIcon />
             {article.relativeTime}
           </span>
-          <span>{t('feed.readTime', { minutes: article.readTime })}</span>
         </div>
       </section>
-      {article.imageUrl ? <img className="standard-detail-image" src={article.imageUrl} alt="" loading="lazy" /> : null}
       <div className="standard-article-view">
         {activeView === 'original' ? <ArticleOriginalView article={article} /> : null}
         {activeView === 'translation' ? <ArticleTranslationView translation={translation} /> : null}
@@ -228,10 +227,10 @@ function ArticleTranslationView({
     <section className="standard-translation-block">
       <span>{t('article.translationTitle')}</span>
       {translation.isLoading || translation.status === 'idle' ? (
-        <div className="standard-translation-state" aria-busy="true">
-          <strong>{t('article.translationLoading')}</strong>
-          <p>{t('article.translationLoadingHint', { target: targetLabel })}</p>
-        </div>
+        <ReaderAsyncBlock
+          label={t('article.translationLoading')}
+          detail={t('article.translationLoadingHint', { target: targetLabel })}
+        />
       ) : null}
       {translation.isError ? (
         <div className="standard-translation-state is-error">
@@ -293,10 +292,10 @@ function ArticleBriefView({
           <strong>{brief.data?.cached ? t('article.briefCached') : t('article.briefChinese')}</strong>
         </header>
         {brief.isLoading || brief.status === 'idle' ? (
-          <div className="standard-translation-state" aria-busy="true">
-            <strong>{t('article.briefLoading')}</strong>
-            <p>{t('article.briefLoadingHint')}</p>
-          </div>
+          <ReaderAsyncBlock
+            label={t('article.briefLoading')}
+            detail={t('article.briefLoadingHint')}
+          />
         ) : null}
         {brief.isError ? (
           <div className="standard-translation-state is-error">

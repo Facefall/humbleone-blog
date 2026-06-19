@@ -1,13 +1,6 @@
 import type { DailyBrief, FeedItem } from '../lib/prototype-data'
 import type { StandardArticle, StandardSource } from '../types/reader'
 
-const articleImages = [
-  '/standard-media/ai-grid.svg',
-  '/standard-media/runtime-terminal.svg',
-  '/standard-media/builder-notes.svg',
-]
-
-
 export { formatIssueDate } from '../lib/i18n/formatters'
 
 export function flattenArticles(brief: DailyBrief): StandardArticle[] {
@@ -16,9 +9,6 @@ export function flattenArticles(brief: DailyBrief): StandardArticle[] {
       ...item,
       sectionTitle: section.title,
       standardCategory: mapCategory(item, section.title),
-      readTime: Math.max(3, Math.round(item.reader.body.join(' ').length / 190)),
-      commentCount: Math.round(item.importanceScore * 8 + item.noveltyScore * 5 + index * 71),
-      imageUrl: index < 2 ? articleImages[index % articleImages.length] : undefined,
       importance:
         section.id === 'hard_news' && index === 0 ? 'breaking' : item.importanceScore >= 82 ? 'top' : 'standard',
     })),

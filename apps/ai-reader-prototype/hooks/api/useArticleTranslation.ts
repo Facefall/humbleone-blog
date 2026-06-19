@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { StandardArticle } from '../../types/reader'
 import {
   translateArticleRequest,
@@ -8,12 +8,15 @@ import {
   type ArticleTranslationResponse,
 } from '../../services/api/articleTranslationApi'
 import { isApiCanceledError, normalizeApiError, type ApiError } from '../../services/api/request'
+import { waitForMinimumDuration } from '../../utils/asyncTiming'
 
 type ArticleTranslationState = {
   data: ArticleTranslationResponse | null
   error: ApiError | null
   status: 'idle' | 'loading' | 'success' | 'error'
 }
+
+const minimumLoadingMs = 900
 
 export function useArticleTranslation(article: StandardArticle, enabled: boolean) {
   const targetLanguage: ArticleTranslationLanguage = article.language === 'zh-CN' ? 'en' : 'zh-CN'
@@ -33,24 +36,24 @@ export function useArticleTranslation(article: StandardArticle, enabled: boolean
     error: null,
     status: 'idle',
   })
+  const completedRequestKeyRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (!enabled) {
       return undefined
     }
 
+    if (completedRequestKeyRef.current === requestKey) {
+      return undefined
+    }
+
     const controller = new AbortController()
+    const startedAt = Date.now()
 
-    setState((current) => {
-      if (current.status === 'success' && current.data?.articleId === article.id) {
-        return current
-      }
-
-      return {
-        data: null,
-        error: null,
-        status: 'loading',
-      }
+    setState({
+      data: null,
+      error: null,
+      status: 'loading',
     })
 
     void translateArticleRequest({
@@ -62,18 +65,27 @@ export function useArticleTranslation(article: StandardArticle, enabled: boolean
       url: article.url,
     }, {
       signal: controller.signal,
-    }).then((data) => {
+    }).then(async (data) => {
+      await waitForMinimumDuration(startedAt, minimumLoadingMs, controller.signal)
+
       if (controller.signal.aborted) {
         return
       }
 
+      completedRequestKeyRef.current = requestKey
       setState({
         data,
         error: null,
         status: 'success',
       })
-    }).catch((error) => {
+    }).catch(async (error) => {
       if (controller.signal.aborted || isApiCanceledError(error)) {
+        return
+      }
+
+      await waitForMinimumDuration(startedAt, minimumLoadingMs, controller.signal)
+
+      if (controller.signal.aborted) {
         return
       }
 

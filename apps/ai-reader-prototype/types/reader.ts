@@ -3,9 +3,6 @@ import type { FeedItem, SourceCollectionConfig, SourceContentType, SourceDeskIte
 export type StandardArticle = FeedItem & {
   sectionTitle: string
   standardCategory: string
-  readTime: number
-  commentCount: number
-  imageUrl?: string
   importance: 'breaking' | 'top' | 'standard'
 }
 
