@@ -31,6 +31,7 @@ type StandardFeedPanelProps = {
   showUnreadOnly?: boolean
   actionNotice?: StandardActionNotice
   feedNotice?: string | null
+  feedRefreshing?: boolean
   libraryFilter?: StandardLibraryFilter | null
   onSelectArticle: (articleId: string) => void
   onClearSource: () => void
@@ -60,6 +61,7 @@ export function StandardFeedPanel({
   showUnreadOnly = false,
   actionNotice = null,
   feedNotice = null,
+  feedRefreshing = false,
   libraryFilter = null,
   onSelectArticle,
   onClearSource,
@@ -113,9 +115,18 @@ export function StandardFeedPanel({
           {feedNotice ? <strong aria-live="polite">{feedNotice}</strong> : null}
         </div>
         <div className="standard-feed-toolbar-actions" aria-label={t('feed.actionsAria')}>
-          <button type="button" aria-label={t('feed.refreshAria')} onClick={onRefreshFeed}>
+          <button
+            type="button"
+            className={feedRefreshing ? 'is-active' : undefined}
+            aria-label={t('feed.refreshAria')}
+            aria-busy={feedRefreshing}
+            disabled={feedRefreshing}
+            onClick={() => {
+              void onRefreshFeed?.()
+            }}
+          >
             <ArrowPathIcon />
-            <span>{t('feed.refresh')}</span>
+            <span>{feedRefreshing ? t('feed.refreshing') : t('feed.refresh')}</span>
           </button>
           <button
             type="button"

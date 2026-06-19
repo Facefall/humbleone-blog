@@ -17,7 +17,15 @@ import { getRelatedStandardArticles } from '../utils/readerRelations'
 import { readStandardReaderInitialStateFromSearch, writeStandardReaderUrlState } from '../utils/readerUrlState'
 import { buildSources, flattenArticles, getSelectedArticle } from '../utils/standardReaderModel'
 
-export function useStandardReaderState(brief: DailyBrief, initialState?: StandardReaderInitialState) {
+type UseStandardReaderStateOptions = {
+  onRefreshFeed?: () => Promise<DailyBrief | null>
+}
+
+export function useStandardReaderState(
+  brief: DailyBrief,
+  initialState?: StandardReaderInitialState,
+  options: UseStandardReaderStateOptions = {},
+) {
   const { t } = useTranslation('reader')
   const articles = useMemo(() => flattenArticles(brief), [brief])
   const sources = useMemo(() => buildSources(brief), [brief])
@@ -52,6 +60,7 @@ export function useStandardReaderState(brief: DailyBrief, initialState?: Standar
   const [libraryFilter, setLibraryFilter] = useState<StandardLibraryFilter | null>(null)
   const [actionNotice, setActionNotice] = useState<StandardActionNotice>(null)
   const [feedNotice, setFeedNotice] = useState<string | null>(null)
+  const [feedRefreshing, setFeedRefreshing] = useState(false)
   const [copiedAnalysisArticleId, setCopiedAnalysisArticleId] = useState<string | null>(null)
   const [relatedOpen, setRelatedOpen] = useState(false)
   const [urlHydrated, setUrlHydrated] = useState(hasExplicitInitialState)
@@ -219,6 +228,16 @@ export function useStandardReaderState(brief: DailyBrief, initialState?: Standar
     setArticlePanelOpen(true)
     setFeedback(null)
     setRelatedOpen(false)
+    setReadArticleIds((current) => {
+      if (current.has(articleId)) {
+        return current
+      }
+
+      const next = new Set(current)
+
+      next.add(articleId)
+      return next
+    })
   }
 
   function closeArticlePanel() {
@@ -248,8 +267,23 @@ export function useStandardReaderState(brief: DailyBrief, initialState?: Standar
     setLibraryFilter(null)
   }
 
-  function refreshFeed() {
-    showFeedNotice(t('feed.notice.refreshed', { count: articles.length }))
+  async function refreshFeed() {
+    if (feedRefreshing) {
+      return
+    }
+
+    setFeedRefreshing(true)
+
+    try {
+      const nextBrief = await options.onRefreshFeed?.()
+      const count = nextBrief?.itemCount ?? articles.length
+
+      showFeedNotice(t('feed.notice.refreshed', { count }))
+    } catch (error) {
+      showFeedNotice(error instanceof Error ? error.message : t('feed.notice.refreshFailed'))
+    } finally {
+      setFeedRefreshing(false)
+    }
   }
 
   function markAllRead() {
@@ -364,6 +398,7 @@ export function useStandardReaderState(brief: DailyBrief, initialState?: Standar
     showUnreadOnly,
     actionNotice,
     feedNotice,
+    feedRefreshing,
     copiedAnalysisArticleId,
     relatedArticles,
     relatedOpen,

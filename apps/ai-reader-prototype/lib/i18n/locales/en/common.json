@@ -1,6 +1,7 @@
 {
   "loading": {
     "reader": "Loading reader workspace",
+    "sources": "Syncing sources",
     "aria": "Loading reader"
   },
   "localeSwitcher": {

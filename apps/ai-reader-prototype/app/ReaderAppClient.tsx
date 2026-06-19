@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { TodayPrototype, type PrototypeVariant } from '../components/TodayPrototype'
+import { ReaderLoadingScreen } from '../components/reader/ReaderLoadingScreen'
 import { StandardReaderPrototype } from '../components/reader/StandardReaderPrototype'
 import { useFeedHubBrief } from '../hooks/api/useFeedHubBrief'
 import { dailyBrief } from '../lib/prototype-data'
@@ -35,11 +36,14 @@ function ReaderAppClientFallback() {
   const { t } = useTranslation('common')
 
   return (
-    <main className="reader-csr-shell" aria-busy="true" aria-label={t('loading.aria')}>
-      <span>AI</span>
-      <strong>{t('loading.reader')}</strong>
-    </main>
+    <ReaderLoadingScreen detail={t('loading.reader')} />
   )
+}
+
+function ReaderAppDataFallback() {
+  const { t } = useTranslation('common')
+
+  return <ReaderLoadingScreen detail={t('loading.sources')} />
 }
 
 export function ReaderAppClient() {
@@ -60,6 +64,14 @@ export function ReaderAppClient() {
     )
   }
 
+  if (feedHubBrief.isLoading && !feedHubBrief.data) {
+    return (
+      <I18nProvider>
+        <ReaderAppDataFallback />
+      </I18nProvider>
+    )
+  }
+
   const variant = normalizeVariant(searchParams.get('variant'))
   const theme = normalizeTheme(searchParams.get('theme'))
 
@@ -68,7 +80,14 @@ export function ReaderAppClient() {
       {theme === 'source-desk' ? (
         <TodayPrototype brief={brief} variant={variant} />
       ) : (
-        <StandardReaderPrototype brief={brief} />
+        <StandardReaderPrototype
+          brief={brief}
+          onRefreshFeed={async () => {
+            const response = await feedHubBrief.refresh()
+
+            return response?.brief ?? null
+          }}
+        />
       )}
     </I18nProvider>
   )

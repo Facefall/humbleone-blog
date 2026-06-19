@@ -17,11 +17,12 @@ import { StandardArticleRestorePanel } from './StandardArticleRestorePanel'
 type StandardReaderPrototypeProps = {
   brief: DailyBrief
   initialState?: StandardReaderInitialState
+  onRefreshFeed?: () => Promise<DailyBrief | null>
 }
 
-export function StandardReaderPrototype({ brief, initialState }: StandardReaderPrototypeProps) {
+export function StandardReaderPrototype({ brief, initialState, onRefreshFeed }: StandardReaderPrototypeProps) {
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const readerState = useStandardReaderState(brief, initialState)
+  const readerState = useStandardReaderState(brief, initialState, { onRefreshFeed })
   useStandardReaderKeyboard({
     hasActiveFilters: readerState.hasActiveFilters,
     actions: readerState.actions,
@@ -32,7 +33,42 @@ export function StandardReaderPrototype({ brief, initialState }: StandardReaderP
 
     if (mode === 'sources') {
       controls.expandSourcesPanel()
+      return
     }
+
+    if (mode === 'signals') {
+      readerState.actions.clearSourceFilter()
+      readerState.actions.clearLibraryFilter()
+      readerState.actions.setShowUnreadOnly(true)
+      return
+    }
+
+    if (mode === 'trends') {
+      readerState.actions.setShowUnreadOnly(false)
+      readerState.actions.selectLibraryFilter('favorites')
+      return
+    }
+
+    if (mode === 'radio') {
+      void readerState.actions.refreshFeed()
+    }
+  }
+
+  function activateRailHome(controls: ResizableReaderLayoutControls) {
+    readerState.actions.setSelectedRailMode('sources')
+    readerState.actions.clearReaderFilters()
+    controls.expandSourcesPanel()
+  }
+
+  function activateRailLibrary() {
+    readerState.actions.setSelectedRailMode('library')
+    readerState.actions.setShowUnreadOnly(false)
+    readerState.actions.selectLibraryFilter('bookmarks')
+  }
+
+  function activateRailSettings(controls: ResizableReaderLayoutControls) {
+    readerState.actions.setSelectedRailMode('settings')
+    controls.expandSourcesPanel()
   }
 
   return (
@@ -50,6 +86,9 @@ export function StandardReaderPrototype({ brief, initialState }: StandardReaderP
             <StandardSourceRail
               selectedMode={readerState.selectedRailMode}
               sourcesCollapsed={controls.sourcesCollapsed}
+              onActivateHome={() => activateRailHome(controls)}
+              onOpenLibrary={activateRailLibrary}
+              onOpenSettings={() => activateRailSettings(controls)}
               onSelectMode={(mode) => selectRailMode(mode, controls)}
             />
           ) : (
@@ -57,6 +96,7 @@ export function StandardReaderPrototype({ brief, initialState }: StandardReaderP
               sources={readerState.sources}
               activeSources={readerState.activeSources}
               collapsing={controls.sourcesCollapsing}
+              configuredCollections={brief.sourceDesk.sourceCollections}
               libraryCounts={{
                 bookmarks: readerState.savedArticleIds.size,
                 favorites: readerState.favoritedArticleIds.size,
@@ -82,6 +122,7 @@ export function StandardReaderPrototype({ brief, initialState }: StandardReaderP
             showUnreadOnly={readerState.showUnreadOnly}
             actionNotice={readerState.actionNotice}
             feedNotice={readerState.feedNotice}
+            feedRefreshing={readerState.feedRefreshing}
             libraryFilter={readerState.libraryFilter}
             onSelectArticle={readerState.actions.selectArticle}
             onClearLibraryFilter={readerState.actions.clearLibraryFilter}
@@ -103,10 +144,6 @@ export function StandardReaderPrototype({ brief, initialState }: StandardReaderP
               copyStatus={readerState.copiedAnalysisArticleId === readerState.selectedArticle.id ? 'copied' : 'idle'}
               relatedArticles={readerState.relatedArticles}
               relatedOpen={readerState.relatedOpen}
-              onClose={() => {
-                readerState.actions.closeArticlePanel()
-                controls.minimizeArticlePanel()
-              }}
               onCopyAnalysis={readerState.actions.copyAnalysis}
               onFeedback={readerState.actions.setFeedback}
               onSelectRelatedArticle={readerState.actions.selectArticle}

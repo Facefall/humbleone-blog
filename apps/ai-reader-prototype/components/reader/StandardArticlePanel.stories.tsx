@@ -16,7 +16,6 @@ const meta = {
   args: {
     article: storySelectedArticle,
     feedback: null,
-    onClose: () => undefined,
     onFeedback: () => undefined,
   },
   decorators: [

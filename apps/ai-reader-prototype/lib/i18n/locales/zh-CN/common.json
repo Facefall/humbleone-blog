@@ -1,6 +1,7 @@
 {
   "loading": {
     "reader": "正在加载阅读器工作区",
+    "sources": "正在同步信息源",
     "aria": "正在加载阅读器"
   },
   "localeSwitcher": {

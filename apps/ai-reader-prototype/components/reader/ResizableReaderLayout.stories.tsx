@@ -74,12 +74,11 @@ function ResizableLayoutStory() {
             onClearSource={() => setSelectedSourceId(null)}
           />
         }
-        renderArticle={(controls) => (
+        renderArticle={() => (
           <StandardArticlePanel
             article={selectedArticle}
             feedback={null}
             relatedArticles={storyRelatedArticles}
-            onClose={controls.minimizeArticlePanel}
             onFeedback={() => undefined}
             onSelectRelatedArticle={setSelectedArticleId}
           />

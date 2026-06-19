@@ -35,16 +35,93 @@ button {
   display: grid;
   min-height: 100vh;
   place-content: center;
-  gap: 10px;
+  gap: 14px;
   color: var(--standard-text);
-  background: #080808;
+  background:
+    radial-gradient(circle at 50% 44%, rgba(240, 165, 0, 0.08), transparent 13rem),
+    linear-gradient(180deg, #060606, #0b0b0a 48%, #050505);
   font-family: var(--font-terminal);
   letter-spacing: 0.08em;
+  overflow: hidden;
+  position: relative;
 }
 
-.reader-csr-shell span {
+.reader-csr-shell::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: radial-gradient(circle at center, black, transparent 64%);
+}
+
+.reader-loading-emblem {
+  display: grid;
+  place-items: center;
+  position: relative;
+  width: 96px;
+  height: 96px;
+  justify-self: center;
+}
+
+.reader-loading-emblem > span {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid rgba(240, 165, 0, 0.4);
+  border-radius: 50%;
+  background: rgba(240, 165, 0, 0.05);
   color: var(--standard-primary);
   font-size: 12px;
+  box-shadow:
+    0 0 26px rgba(240, 165, 0, 0.12),
+    inset 0 0 18px rgba(240, 165, 0, 0.06);
+}
+
+.reader-loading-orbit {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(240, 165, 0, 0.13);
+  border-radius: 50%;
+  animation: reader-loading-spin 1.9s linear infinite;
+}
+
+.reader-loading-orbit::before {
+  content: '';
+  position: absolute;
+  inset: 12px;
+  border: 1px dashed rgba(199, 185, 151, 0.16);
+  border-radius: 50%;
+}
+
+.reader-loading-orbit i {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--standard-primary);
+  box-shadow: 0 0 14px rgba(240, 165, 0, 0.5);
+}
+
+.reader-loading-orbit i:nth-child(1) {
+  left: 46px;
+  top: -3px;
+}
+
+.reader-loading-orbit i:nth-child(2) {
+  right: 8px;
+  bottom: 18px;
+  opacity: 0.58;
+}
+
+.reader-loading-orbit i:nth-child(3) {
+  left: 9px;
+  bottom: 18px;
+  opacity: 0.34;
 }
 
 .reader-csr-shell strong {
@@ -52,5 +129,53 @@ button {
   font-size: 11px;
   font-weight: 400;
   text-transform: uppercase;
+}
+
+.reader-csr-shell small {
+  display: inline-flex;
+  justify-content: center;
+  gap: 5px;
+}
+
+.reader-csr-shell small span {
+  width: 22px;
+  height: 2px;
+  background: rgba(240, 165, 0, 0.28);
+  transform-origin: left center;
+  animation: reader-loading-pulse 0.9s ease-in-out infinite;
+}
+
+.reader-csr-shell small span:nth-child(2) {
+  animation-delay: 0.12s;
+}
+
+.reader-csr-shell small span:nth-child(3) {
+  animation-delay: 0.24s;
+}
+
+@keyframes reader-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes reader-loading-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scaleX(0.45);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reader-loading-orbit,
+  .reader-csr-shell small span {
+    animation: none;
+  }
 }
 

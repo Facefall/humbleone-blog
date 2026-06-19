@@ -23,6 +23,7 @@ export {
   FunnelIcon,
   HandThumbDownIcon as ThumbsDownIcon,
   HandThumbUpIcon as ThumbsUpIcon,
+  LanguageIcon,
   MagnifyingGlassIcon,
   NewspaperIcon,
   PencilSquareIcon,

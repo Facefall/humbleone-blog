@@ -18,6 +18,9 @@ import {
 type StandardSourceRailProps = {
   selectedMode: string
   sourcesCollapsed: boolean
+  onActivateHome?: () => void
+  onOpenLibrary?: () => void
+  onOpenSettings?: () => void
   onSelectMode: (mode: string) => void
 }
 
@@ -33,6 +36,9 @@ const railItems: Array<{ id: string; Icon: RailIcon }> = [
 export function StandardSourceRail({
   selectedMode,
   sourcesCollapsed,
+  onActivateHome,
+  onOpenLibrary,
+  onOpenSettings,
   onSelectMode,
 }: StandardSourceRailProps) {
   const { t } = useTranslation('reader')
@@ -47,9 +53,15 @@ export function StandardSourceRail({
 
   return (
     <nav ref={railRef} className="standard-icon-rail" aria-label={t('rail.aria')}>
-      <div className="standard-rail-mark">
+      <button
+        type="button"
+        className="standard-rail-mark"
+        aria-label={t('rail.home')}
+        title={t('rail.home')}
+        onClick={onActivateHome}
+      >
         <NewspaperIcon />
-      </div>
+      </button>
       {railItems.map((item) => {
         const label = t(`rail.${item.id}`)
 
@@ -71,10 +83,22 @@ export function StandardSourceRail({
         )
       })}
       <div className="standard-rail-spacer" />
-      <button type="button" aria-label={t('rail.library')} title={t('rail.library')}>
+      <button
+        type="button"
+        className={selectedMode === 'library' ? 'is-active' : undefined}
+        aria-label={t('rail.library')}
+        title={t('rail.library')}
+        onClick={onOpenLibrary}
+      >
         <BookOpenIcon />
       </button>
-      <button type="button" aria-label={t('rail.settings')} title={t('rail.settings')}>
+      <button
+        type="button"
+        className={selectedMode === 'settings' ? 'is-active' : undefined}
+        aria-label={t('rail.settings')}
+        title={t('rail.settings')}
+        onClick={onOpenSettings}
+      >
         <Cog6ToothIcon />
       </button>
     </nav>
