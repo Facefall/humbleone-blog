@@ -1,12 +1,14 @@
 'use client'
 
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useArticleReadState } from './useArticleReadState'
+import { useArticleLibraryState } from './api/useArticleLibraryState'
+import { useFeedRefreshControl } from './useFeedRefreshControl'
+import { useReaderArticleActions } from './useReaderArticleActions'
+import { useTimedState } from './useTimedState'
 import type { DailyBrief } from '../lib/prototype-data'
-import { copyTextToClipboard } from '../services/browserClipboard'
-import { readStandardArticleState, writeStandardArticleState } from '../services/standardReaderStorage'
 import type {
-  StandardActionNotice,
   StandardFeedback,
   StandardLibraryFilter,
   StandardReaderInitialState,
@@ -50,24 +52,37 @@ export function useStandardReaderState(
   const [searchQuery, setSearchQuery] = useState(() => explicitInitialState.searchQuery ?? '')
   const [articlePanelOpen, setArticlePanelOpen] = useState(() => explicitInitialState.articlePanelOpen ?? true)
   const [feedback, setFeedback] = useState<StandardFeedback>(null)
-  const [readArticleIds, setReadArticleIds] = useState(() => readStandardArticleState(articles).readArticleIds)
-  const [savedArticleIds, setSavedArticleIds] = useState(() => readStandardArticleState(articles).savedArticleIds)
-  const [favoritedArticleIds, setFavoritedArticleIds] = useState(
-    () => readStandardArticleState(articles).favoritedArticleIds,
-  )
-  const [articleStateHydrated, setArticleStateHydrated] = useState(false)
+  const articleReadState = useArticleReadState(articles)
+  const { readArticleIds, unreadCount } = articleReadState
+  const articleLibraryState = useArticleLibraryState(articles)
+  const { favoritedArticleIds, savedArticleIds } = articleLibraryState
   const [showUnreadOnly, setShowUnreadOnly] = useState(false)
   const [libraryFilter, setLibraryFilter] = useState<StandardLibraryFilter | null>(null)
-  const [actionNotice, setActionNotice] = useState<StandardActionNotice>(null)
-  const [feedNotice, setFeedNotice] = useState<string | null>(null)
-  const [feedRefreshing, setFeedRefreshing] = useState(false)
-  const [copiedAnalysisArticleId, setCopiedAnalysisArticleId] = useState<string | null>(null)
+  const articleActions = useReaderArticleActions({
+    articles,
+    labels: {
+      analysisCopied: t('actions.analysisCopied'),
+      favorited: t('actions.favorited'),
+      linkCopied: t('actions.linkCopied'),
+      removed: t('actions.removed'),
+      saved: t('actions.saved'),
+      unfavorited: t('actions.unfavorited'),
+    },
+    libraryActions: articleLibraryState.actions,
+  })
+  const feedNoticeState = useTimedState<string | null>(null)
+  const feedRefreshControl = useFeedRefreshControl({
+    articleCount: articles.length,
+    labels: {
+      refreshed: (count) => t('feed.notice.refreshed', { count }),
+      refreshFailed: t('feed.notice.refreshFailed'),
+    },
+    onNotice: showFeedNotice,
+    onRefreshFeed: options.onRefreshFeed,
+  })
   const [relatedOpen, setRelatedOpen] = useState(false)
   const [urlHydrated, setUrlHydrated] = useState(hasExplicitInitialState)
   const deferredSearchQuery = useDeferredValue(searchQuery)
-  const noticeTimerRef = useRef<number | null>(null)
-  const feedNoticeTimerRef = useRef<number | null>(null)
-  const copyTimerRef = useRef<number | null>(null)
 
   const activeSources = sources.filter((source) => source.active).length
   const filteredArticles = useMemo(
@@ -104,41 +119,6 @@ export function useStandardReaderState(
     getSelectedArticle(articles, selectedArticleId)
   const hasActiveFilters = Boolean(searchQuery || selectedSourceId || showUnreadOnly || libraryFilter)
   const relatedArticles = useMemo(() => getRelatedStandardArticles(articles, selectedArticle), [articles, selectedArticle])
-  const unreadCount = articles.reduce((count, article) => count + (readArticleIds.has(article.id) ? 0 : 1), 0)
-
-  useEffect(() => {
-    const nextArticleState = readStandardArticleState(articles)
-
-    setReadArticleIds(nextArticleState.readArticleIds)
-    setSavedArticleIds(nextArticleState.savedArticleIds)
-    setFavoritedArticleIds(nextArticleState.favoritedArticleIds)
-    setArticleStateHydrated(true)
-  }, [articles])
-
-  useEffect(() => {
-    if (!articleStateHydrated) {
-      return
-    }
-
-    writeStandardArticleState({ readArticleIds, savedArticleIds, favoritedArticleIds })
-  }, [articleStateHydrated, favoritedArticleIds, readArticleIds, savedArticleIds])
-
-  useEffect(
-    () => () => {
-      if (noticeTimerRef.current) {
-        window.clearTimeout(noticeTimerRef.current)
-      }
-
-      if (copyTimerRef.current) {
-        window.clearTimeout(copyTimerRef.current)
-      }
-
-      if (feedNoticeTimerRef.current) {
-        window.clearTimeout(feedNoticeTimerRef.current)
-      }
-    },
-    [],
-  )
 
   useEffect(() => {
     if (hasExplicitInitialState || typeof window === 'undefined') {
@@ -228,16 +208,7 @@ export function useStandardReaderState(
     setArticlePanelOpen(true)
     setFeedback(null)
     setRelatedOpen(false)
-    setReadArticleIds((current) => {
-      if (current.has(articleId)) {
-        return current
-      }
-
-      const next = new Set(current)
-
-      next.add(articleId)
-      return next
-    })
+    articleReadState.actions.markArticleRead(articleId)
   }
 
   function closeArticlePanel() {
@@ -267,116 +238,13 @@ export function useStandardReaderState(
     setLibraryFilter(null)
   }
 
-  async function refreshFeed() {
-    if (feedRefreshing) {
-      return
-    }
-
-    setFeedRefreshing(true)
-
-    try {
-      const nextBrief = await options.onRefreshFeed?.()
-      const count = nextBrief?.itemCount ?? articles.length
-
-      showFeedNotice(t('feed.notice.refreshed', { count }))
-    } catch (error) {
-      showFeedNotice(error instanceof Error ? error.message : t('feed.notice.refreshFailed'))
-    } finally {
-      setFeedRefreshing(false)
-    }
-  }
-
   function markAllRead() {
-    setReadArticleIds((current) => {
-      const next = new Set(current)
-
-      filteredArticles.forEach((article) => next.add(article.id))
-      return next
-    })
+    articleReadState.actions.markArticlesRead(filteredArticles.map((article) => article.id))
     showFeedNotice(t('feed.notice.markedRead', { count: filteredArticles.length }))
   }
 
-  function toggleSaveArticle(articleId: string) {
-    const willSave = !savedArticleIds.has(articleId)
-
-    setSavedArticleIds((current) => {
-      const next = new Set(current)
-
-      if (next.has(articleId)) {
-        next.delete(articleId)
-        return next
-      }
-
-      next.add(articleId)
-      return next
-    })
-    showActionNotice(articleId, willSave ? t('actions.saved') : t('actions.removed'), willSave ? 'positive' : 'neutral')
-  }
-
-  function toggleFavoriteArticle(articleId: string) {
-    const willFavorite = !favoritedArticleIds.has(articleId)
-
-    setFavoritedArticleIds((current) => {
-      const next = new Set(current)
-
-      if (next.has(articleId)) {
-        next.delete(articleId)
-        return next
-      }
-
-      next.add(articleId)
-      return next
-    })
-    showActionNotice(articleId, willFavorite ? t('actions.favorited') : t('actions.unfavorited'), willFavorite ? 'positive' : 'neutral')
-  }
-
-  function shareArticle(articleId: string) {
-    const article = articles.find((item) => item.id === articleId)
-
-    if (!article) {
-      return
-    }
-
-    void copyTextToClipboard(article.url)
-    showActionNotice(articleId, t('actions.linkCopied'), 'positive')
-  }
-
-  function copyAnalysis(articleId: string) {
-    const article = articles.find((item) => item.id === articleId)
-
-    if (!article) {
-      return
-    }
-
-    void copyTextToClipboard(article.reader.aiSummary)
-    setCopiedAnalysisArticleId(articleId)
-    showActionNotice(articleId, t('actions.analysisCopied'), 'positive')
-
-    if (copyTimerRef.current) {
-      window.clearTimeout(copyTimerRef.current)
-    }
-
-    copyTimerRef.current = window.setTimeout(() => setCopiedAnalysisArticleId(null), 1800)
-  }
-
-  function showActionNotice(articleId: string, label: string, tone: 'neutral' | 'positive') {
-    setActionNotice({ articleId, label, tone })
-
-    if (noticeTimerRef.current) {
-      window.clearTimeout(noticeTimerRef.current)
-    }
-
-    noticeTimerRef.current = window.setTimeout(() => setActionNotice(null), 1800)
-  }
-
   function showFeedNotice(label: string) {
-    setFeedNotice(label)
-
-    if (feedNoticeTimerRef.current) {
-      window.clearTimeout(feedNoticeTimerRef.current)
-    }
-
-    feedNoticeTimerRef.current = window.setTimeout(() => setFeedNotice(null), 1800)
+    feedNoticeState.setTimedValue(label)
   }
 
   return {
@@ -396,10 +264,10 @@ export function useStandardReaderState(
     favoritedArticleIds,
     libraryFilter,
     showUnreadOnly,
-    actionNotice,
-    feedNotice,
-    feedRefreshing,
-    copiedAnalysisArticleId,
+    actionNotice: articleActions.actionNotice,
+    feedNotice: feedNoticeState.value,
+    feedRefreshing: feedRefreshControl.feedRefreshing,
+    copiedAnalysisArticleId: articleActions.copiedAnalysisArticleId,
     relatedArticles,
     relatedOpen,
     hasActiveFilters,
@@ -407,12 +275,12 @@ export function useStandardReaderState(
       clearSourceFilter,
       clearLibraryFilter,
       clearReaderFilters,
-      copyAnalysis,
+      copyAnalysis: articleActions.actions.copyAnalysis,
       closeArticlePanel,
       openArticlePanel,
       markAllRead,
-      refreshFeed,
-      shareArticle,
+      refreshFeed: feedRefreshControl.refreshFeed,
+      shareArticle: articleActions.actions.shareArticle,
       selectArticle,
       selectLibraryFilter,
       selectNextArticle,
@@ -423,8 +291,8 @@ export function useStandardReaderState(
       setSearchQuery,
       setShowUnreadOnly,
       setSelectedRailMode,
-      toggleFavoriteArticle,
-      toggleSaveArticle,
+      toggleFavoriteArticle: articleActions.actions.toggleFavoriteArticle,
+      toggleSaveArticle: articleActions.actions.toggleSaveArticle,
     },
   }
 }
