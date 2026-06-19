@@ -232,13 +232,13 @@ function ArticleTranslationView({
           detail={t('article.translationLoadingHint', { target: targetLabel })}
         />
       ) : null}
-      {translation.isError ? (
+      {translation.isError && !translation.isLoading ? (
         <div className="standard-translation-state is-error">
           <strong>{t('article.translationFailed')}</strong>
           <p>{translation.error?.message ?? t('article.translationFailedHint')}</p>
         </div>
       ) : null}
-      {translation.data ? (
+      {translation.data && !translation.isLoading ? (
         <article className="standard-translated-article">
           <small>
             {t('article.translationProviderMeta', {
@@ -275,6 +275,7 @@ function ArticleBriefView({
   const { t } = useTranslation('reader')
   const briefBody = brief.data?.body ?? article.reader.aiSummary
   const briefKeyPoints = brief.data?.keyPoints ?? article.reader.sourceProof.concat(article.reader.followUpQuestions.slice(0, 2))
+  const showBriefResult = !brief.isLoading && brief.status !== 'idle' && !brief.isError
 
   return (
     <>
@@ -297,55 +298,61 @@ function ArticleBriefView({
             detail={t('article.briefLoadingHint')}
           />
         ) : null}
-        {brief.isError ? (
+        {brief.isError && !brief.isLoading ? (
           <div className="standard-translation-state is-error">
             <strong>{t('article.briefFailed')}</strong>
             <p>{brief.error?.message ?? t('article.briefFailedHint')}</p>
           </div>
         ) : null}
-        <p>{briefBody}</p>
-        <div className="standard-analysis-feedback">
-          <span>{t('article.helpfulPrompt')}</span>
-          <button
-            type="button"
-            className={feedback === 'helpful' ? 'is-selected' : undefined}
-            aria-label={t('article.helpfulAria')}
-            aria-pressed={feedback === 'helpful'}
-            onClick={() => onFeedback('helpful')}
-          >
-            <ThumbsUpIcon />
-          </button>
-          <button
-            type="button"
-            className={feedback === 'not-helpful' ? 'is-selected' : undefined}
-            aria-label={t('article.notHelpfulAria')}
-            aria-pressed={feedback === 'not-helpful'}
-            onClick={() => onFeedback('not-helpful')}
-          >
-            <ThumbsDownIcon />
-          </button>
-          <button
-            type="button"
-            className={`standard-copy-analysis-button${copyStatus === 'copied' ? ' is-selected' : ''}`}
-            aria-label={t('article.copyAnalysisAria')}
-            onClick={() => onCopyAnalysis?.(article.id)}
-          >
-            <CopyIcon />
-          </button>
-          {copyStatus === 'copied' ? (
-            <strong className="standard-copy-status">{t('common:actions.copied')}</strong>
-          ) : null}
-        </div>
+        {showBriefResult ? (
+          <>
+            <p>{briefBody}</p>
+            <div className="standard-analysis-feedback">
+              <span>{t('article.helpfulPrompt')}</span>
+              <button
+                type="button"
+                className={feedback === 'helpful' ? 'is-selected' : undefined}
+                aria-label={t('article.helpfulAria')}
+                aria-pressed={feedback === 'helpful'}
+                onClick={() => onFeedback('helpful')}
+              >
+                <ThumbsUpIcon />
+              </button>
+              <button
+                type="button"
+                className={feedback === 'not-helpful' ? 'is-selected' : undefined}
+                aria-label={t('article.notHelpfulAria')}
+                aria-pressed={feedback === 'not-helpful'}
+                onClick={() => onFeedback('not-helpful')}
+              >
+                <ThumbsDownIcon />
+              </button>
+              <button
+                type="button"
+                className={`standard-copy-analysis-button${copyStatus === 'copied' ? ' is-selected' : ''}`}
+                aria-label={t('article.copyAnalysisAria')}
+                onClick={() => onCopyAnalysis?.(article.id)}
+              >
+                <CopyIcon />
+              </button>
+              {copyStatus === 'copied' ? (
+                <strong className="standard-copy-status">{t('common:actions.copied')}</strong>
+              ) : null}
+            </div>
+          </>
+        ) : null}
       </section>
-      <section className="standard-key-points">
-        <span>{t('article.keyPoints')}</span>
-        {briefKeyPoints.map((point) => (
-          <p key={point}>
-            <ArrowRightIcon />
-            {point}
-          </p>
-        ))}
-      </section>
+      {showBriefResult ? (
+        <section className="standard-key-points">
+          <span>{t('article.keyPoints')}</span>
+          {briefKeyPoints.map((point) => (
+            <p key={point}>
+              <ArrowRightIcon />
+              {point}
+            </p>
+          ))}
+        </section>
+      ) : null}
     </>
   )
 }
