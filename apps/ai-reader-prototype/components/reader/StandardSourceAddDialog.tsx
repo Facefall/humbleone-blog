@@ -3,11 +3,14 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import { FormEvent, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { SourceContentType } from '../../lib/prototype-data'
 import type { SourceCollection } from '../../types/reader'
 import { XMarkIcon } from './ReaderIcons'
 
 export type StandardSourceAddDialogValue = {
   collectionId: string | null
+  contentType: SourceContentType
+  displayName: string
   newTagName: string
   tagMode: 'existing' | 'new'
   url: string
@@ -17,20 +20,28 @@ type StandardSourceAddDialogProps = {
   collections: SourceCollection[]
   getCollectionLabel: (collection: SourceCollection) => string
   open: boolean
+  submitError?: string | null
+  submitting?: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (value: StandardSourceAddDialogValue) => void
+  onSubmit: (value: StandardSourceAddDialogValue) => Promise<void> | void
 }
+
+const sourceContentTypes: SourceContentType[] = ['article', 'social', 'image', 'video']
 
 export function StandardSourceAddDialog({
   collections,
   getCollectionLabel,
   open,
+  submitError = null,
+  submitting = false,
   onOpenChange,
   onSubmit,
 }: StandardSourceAddDialogProps) {
   const { t } = useTranslation('reader')
   const defaultCollectionId = collections[0]?.id ?? ''
   const [url, setUrl] = useState('')
+  const [displayName, setDisplayName] = useState('')
+  const [contentType, setContentType] = useState<SourceContentType>('article')
   const [tagMode, setTagMode] = useState<'existing' | 'new'>('existing')
   const [selectedCollectionId, setSelectedCollectionId] = useState(defaultCollectionId)
   const [newTagName, setNewTagName] = useState('')
@@ -44,25 +55,32 @@ export function StandardSourceAddDialog({
     }
 
     setUrl('')
+    setDisplayName('')
+    setContentType('article')
     setTagMode(collections.length ? 'existing' : 'new')
     setSelectedCollectionId(defaultCollectionId)
     setNewTagName('')
   }, [collections.length, defaultCollectionId, open])
 
-  function submitForm(event: FormEvent<HTMLFormElement>) {
+  async function submitForm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!canSubmit) {
+    if (!canSubmit || submitting) {
       return
     }
 
-    onSubmit({
-      collectionId: tagMode === 'existing' ? selectedCollectionId : null,
-      newTagName: tagMode === 'new' ? trimmedNewTagName : '',
-      tagMode,
-      url: trimmedUrl,
-    })
-    onOpenChange(false)
+    try {
+      await onSubmit({
+        collectionId: tagMode === 'existing' ? selectedCollectionId : null,
+        contentType,
+        displayName: displayName.trim(),
+        newTagName: tagMode === 'new' ? trimmedNewTagName : '',
+        tagMode,
+        url: trimmedUrl,
+      })
+    } catch {
+      // The parent owns the visible API error state.
+    }
   }
 
   return (
@@ -85,11 +103,32 @@ export function StandardSourceAddDialog({
               <input
                 autoFocus
                 inputMode="url"
-                type="url"
+                type="text"
                 value={url}
                 placeholder={t('sourceManagement.sourceUrlPlaceholder')}
                 onChange={(event) => setUrl(event.target.value)}
               />
+            </label>
+            <label>
+              <span>{t('sourceManagement.sourceDisplayNameLabel')}</span>
+              <input
+                value={displayName}
+                placeholder={t('sourceManagement.sourceDisplayNamePlaceholder')}
+                onChange={(event) => setDisplayName(event.target.value)}
+              />
+            </label>
+            <label>
+              <span>{t('sourceManagement.sourceContentTypeLabel')}</span>
+              <select
+                value={contentType}
+                onChange={(event) => setContentType(event.target.value as SourceContentType)}
+              >
+                {sourceContentTypes.map((nextContentType) => (
+                  <option key={nextContentType} value={nextContentType}>
+                    {t(`sources.tabs.${nextContentType}`)}
+                  </option>
+                ))}
+              </select>
             </label>
             <div className="standard-source-tag-mode" role="group" aria-label={t('sourceManagement.sourceTagPickerAria')}>
               <button
@@ -136,13 +175,15 @@ export function StandardSourceAddDialog({
                 />
               </label>
             )}
-            <p>{t('sourceManagement.addSourceUrlHint')}</p>
+            <p className={submitError ? 'is-error' : undefined}>
+              {submitError ?? t('sourceManagement.addSourceUrlHint')}
+            </p>
             <div className="standard-source-dialog-actions">
-              <span>{t('sourceManagement.addSourcePending')}</span>
+              <span>{submitting ? t('sourceManagement.addSourceSubmitting') : t('sourceManagement.addSourcePending')}</span>
               <Dialog.Close asChild>
-                <button type="button">{t('sourceManagement.cancel')}</button>
+                <button type="button" disabled={submitting}>{t('sourceManagement.cancel')}</button>
               </Dialog.Close>
-              <button type="submit" className="is-primary" disabled={!canSubmit}>
+              <button type="submit" className="is-primary" disabled={!canSubmit || submitting}>
                 {t('sourceManagement.addSourceSubmit')}
               </button>
             </div>

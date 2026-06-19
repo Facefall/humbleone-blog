@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import uniq from 'lodash/uniq'
+import type { SourceCollectionConfig } from '../lib/prototype-data'
 import { readSourceCollectionState, writeSourceCollectionState } from '../services/sourceCollectionStorage'
 import type { SourceCollectionState, StandardSource } from '../types/reader'
 import {
@@ -13,8 +14,15 @@ import {
   reconcileSourceCollectionState,
 } from '../utils/sourceCollections'
 
-export function useSourceCollections(baseSources: StandardSource[]) {
-  const [state, setState] = useState<SourceCollectionState>(() => buildDefaultSourceCollectionState(baseSources))
+const emptyConfiguredCollections: SourceCollectionConfig[] = []
+
+export function useSourceCollections(
+  baseSources: StandardSource[],
+  configuredCollections = emptyConfiguredCollections,
+) {
+  const [state, setState] = useState<SourceCollectionState>(() =>
+    buildDefaultSourceCollectionState(baseSources, configuredCollections),
+  )
   const [hydrated, setHydrated] = useState(false)
   const sourceById = useMemo(
     () => new Map(baseSources.map((source) => [source.feedSourceId, source])),
@@ -23,17 +31,17 @@ export function useSourceCollections(baseSources: StandardSource[]) {
   const sources = useMemo(() => applySourceCollectionState(baseSources, state), [baseSources, state])
 
   useEffect(() => {
-    setState(reconcileSourceCollectionState(baseSources, readSourceCollectionState()))
+    setState(reconcileSourceCollectionState(baseSources, readSourceCollectionState(), configuredCollections))
     setHydrated(true)
-  }, [baseSources])
+  }, [baseSources, configuredCollections])
 
   useEffect(() => {
     if (!hydrated) {
       return
     }
 
-    writeSourceCollectionState(reconcileSourceCollectionState(baseSources, state))
-  }, [baseSources, hydrated, state])
+    writeSourceCollectionState(reconcileSourceCollectionState(baseSources, state, configuredCollections))
+  }, [baseSources, configuredCollections, hydrated, state])
 
   const createCollection = useCallback((name: string) => {
     const normalizedName = normalizeSourceCollectionName(name)
@@ -215,8 +223,8 @@ export function useSourceCollections(baseSources: StandardSource[]) {
   }, [sourceById])
 
   const resetCollections = useCallback(() => {
-    setState(buildDefaultSourceCollectionState(baseSources))
-  }, [baseSources])
+    setState(buildDefaultSourceCollectionState(baseSources, configuredCollections))
+  }, [baseSources, configuredCollections])
 
   return {
     collections: state.collections,

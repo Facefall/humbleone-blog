@@ -1,19 +1,19 @@
-import groupBy from 'lodash/groupBy'
 import uniq from 'lodash/uniq'
+import type { SourceCollectionConfig } from '../lib/prototype-data'
 import type { SourceCollection, SourceCollectionState, StandardSource } from '../types/reader'
 
 const fallbackCollectionId = 'general'
 
-export function buildDefaultSourceCollectionState(sources: StandardSource[]): SourceCollectionState {
-  const groupedSources = groupBy(sources, 'category')
+export function buildDefaultSourceCollectionState(
+  sources: StandardSource[],
+  configuredCollections: SourceCollectionConfig[] = [],
+): SourceCollectionState {
+  if (configuredCollections.length) {
+    return buildConfiguredSourceCollectionState(sources, configuredCollections)
+  }
 
   return {
-    collections: Object.entries(groupedSources).map(([category, items]) => ({
-      id: category,
-      name: category,
-      systemCategory: category,
-      sourceIds: items.map((source) => source.feedSourceId),
-    })),
+    collections: [],
     sourceAliases: {},
   }
 }
@@ -21,8 +21,13 @@ export function buildDefaultSourceCollectionState(sources: StandardSource[]): So
 export function reconcileSourceCollectionState(
   sources: StandardSource[],
   storedState: Partial<SourceCollectionState> | null,
+  configuredCollections: SourceCollectionConfig[] = [],
 ): SourceCollectionState {
-  const defaultState = buildDefaultSourceCollectionState(sources)
+  const defaultState = buildDefaultSourceCollectionState(sources, configuredCollections)
+
+  if (!configuredCollections.length) {
+    return defaultState
+  }
 
   if (!storedState?.collections?.length) {
     return defaultState
@@ -36,6 +41,10 @@ export function reconcileSourceCollectionState(
       }
 
       const defaultCollection = defaultCollectionById.get(collection.id)
+      if (!defaultCollection) {
+        return nextCollections
+      }
+
       const nextCollection: SourceCollection = {
         id: collection.id,
         name: collection.name.trim() || defaultCollection?.name || collection.id,
@@ -86,6 +95,26 @@ export function reconcileSourceCollectionState(
   return {
     collections: collections.length ? collections : defaultState.collections,
     sourceAliases,
+  }
+}
+
+function buildConfiguredSourceCollectionState(
+  sources: StandardSource[],
+  configuredCollections: SourceCollectionConfig[],
+): SourceCollectionState {
+  const validSourceIds = new Set(sources.map((source) => source.feedSourceId))
+  const collections = configuredCollections.map((collection) => {
+    const sourceIds = collection.sourceIds.filter((sourceId) => validSourceIds.has(sourceId))
+
+    return {
+      ...collection,
+      sourceIds,
+    }
+  })
+
+  return {
+    collections,
+    sourceAliases: {},
   }
 }
 

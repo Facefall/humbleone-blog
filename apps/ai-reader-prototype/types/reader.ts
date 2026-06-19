@@ -1,5 +1,4 @@
-import type { FeedItem, SourceDeskItem } from '../lib/prototype-data'
-import type { SourceContentType, SourceRegistryRecord } from '../services/sourceRegistry'
+import type { FeedItem, SourceCollectionConfig, SourceContentType, SourceDeskItem } from '../lib/prototype-data'
 
 export type StandardArticle = FeedItem & {
   sectionTitle: string
@@ -15,15 +14,9 @@ export type StandardSource = SourceDeskItem & {
   active: boolean
   contentType: SourceContentType
   feedSourceId: string
-  registry?: SourceRegistryRecord
 }
 
-export type SourceCollection = {
-  id: string
-  name: string
-  sourceIds: string[]
-  systemCategory?: string
-}
+export type SourceCollection = SourceCollectionConfig
 
 export type SourceCollectionState = {
   collections: SourceCollection[]

@@ -1,23 +1,12 @@
 'use client'
 
 import { useMemo, useRef, useState } from 'react'
-import {
-  DndContext,
-  PointerSensor,
-  pointerWithin,
-  useSensor,
-  useSensors,
-  type CollisionDetection,
-  type DragCancelEvent,
-  type DragEndEvent,
-  type DragStartEvent,
-} from '@dnd-kit/core'
 import countBy from 'lodash/countBy'
 import { useTranslation } from 'react-i18next'
 import { useGsapElementEntrance, useGsapElementPulse } from '../../hooks/useGsapMotion'
 import { useSourceCollections } from '../../hooks/useSourceCollections'
 import { useSourcePanelPreferences } from '../../hooks/useSourcePanelPreferences'
-import type { SourceContentType } from '../../services/sourceRegistry'
+import type { SourceCollectionConfig, SourceContentType } from '../../lib/prototype-data'
 import type { SourceCollection, StandardLibraryFilter, StandardSource } from '../../types/reader'
 import {
   ArrowLeftStartOnRectangleIcon,
@@ -25,22 +14,18 @@ import {
   DocumentTextIcon,
   PhotoIcon,
   PlayCircleIcon,
-  PlusIcon,
   Squares2X2Icon,
 } from './ReaderIcons'
-import { StandardSourceAddDialog, type StandardSourceAddDialogValue } from './StandardSourceAddDialog'
 import { StandardSourceFilterMenu } from './StandardSourceFilterMenu'
 import { StandardSourceGroup } from './StandardSourceGroup'
-import { StandardSourceDeleteDialog } from './StandardSourceDeleteDialog'
 import { StandardSourceGroupsToolbar } from './StandardSourceGroupsToolbar'
 import { StandardSourceInspector } from './StandardSourceInspector'
-import { StandardSourceMembershipDialog } from './StandardSourceMembershipDialog'
-import { StandardSourceTextDialog } from './StandardSourceTextDialog'
 
 type StandardSourcesPanelProps = {
   sources: StandardSource[]
   activeSources: number
   collapsing?: boolean
+  configuredCollections?: SourceCollectionConfig[]
   libraryCounts?: Record<StandardLibraryFilter, number>
   libraryFilter?: StandardLibraryFilter | null
   selectedSourceId: string | null
@@ -51,31 +36,6 @@ type StandardSourcesPanelProps = {
 
 type SourceContentFilter = SourceContentType | 'all'
 
-type SourceManagementDialog =
-  | { type: 'add-source-url' }
-  | { type: 'rename-collection'; collection: SourceCollection }
-  | { type: 'delete-collection'; collection: SourceCollection }
-  | { type: 'add-sources'; collection: SourceCollection }
-  | { type: 'rename-source'; source: StandardSource }
-
-type SourceDragData = {
-  collectionId: string
-  sourceId: string
-  sourceLabel: string
-  type: 'source'
-}
-
-type SourceCollectionDropData = {
-  collectionId: string
-  type: 'source-collection'
-}
-
-type SourceRowDropData = {
-  collectionId: string
-  sourceId: string
-  type: 'source-row'
-}
-
 const sourceContentTabs = [
   { id: 'all', icon: Squares2X2Icon },
   { id: 'article', icon: DocumentTextIcon },
@@ -84,17 +44,11 @@ const sourceContentTabs = [
   { id: 'video', icon: PlayCircleIcon },
 ] satisfies Array<{ id: SourceContentFilter; icon: typeof Squares2X2Icon }>
 
-const sourceCollisionDetection: CollisionDetection = (args) => {
-  const collisions = pointerWithin(args)
-  const rowCollisions = collisions.filter((collision) => String(collision.id).startsWith('source-row:'))
-
-  return rowCollisions.length ? rowCollisions : collisions
-}
-
 export function StandardSourcesPanel({
   sources,
   activeSources,
   collapsing = false,
+  configuredCollections,
   libraryCounts = { bookmarks: 0, favorites: 0 },
   libraryFilter = null,
   selectedSourceId,
@@ -106,16 +60,7 @@ export function StandardSourcesPanel({
   const panelRef = useRef<HTMLElement>(null)
   const [selectedContentType, setSelectedContentType] = useState<SourceContentFilter>('all')
   const [filterMenuMotionKey, setFilterMenuMotionKey] = useState(0)
-  const [managementDialog, setManagementDialog] = useState<SourceManagementDialog | null>(null)
-  const [activeDrag, setActiveDrag] = useState<SourceDragData | null>(null)
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 6,
-      },
-    }),
-  )
-  const sourceCollections = useSourceCollections(sources)
+  const sourceCollections = useSourceCollections(sources, configuredCollections)
   const groupIds = useMemo(
     () => sourceCollections.collections.map((collection) => collection.id),
     [sourceCollections.collections],
@@ -159,63 +104,6 @@ export function StandardSourcesPanel({
       : collection.name
   }
 
-  function handleDragStart(event: DragStartEvent) {
-    const dragData = readSourceDragData(event.active.data.current)
-
-    if (dragData) {
-      setActiveDrag(dragData)
-    }
-  }
-
-  function handleDragEnd(event: DragEndEvent) {
-    const dragData = readSourceDragData(event.active.data.current)
-    const rowDropData = readSourceRowDropData(event.over?.data.current)
-    const collectionDropData = readCollectionDropData(event.over?.data.current)
-
-    setActiveDrag(null)
-
-    if (!dragData) {
-      return
-    }
-
-    if (rowDropData) {
-      sourceCollections.actions.moveSourceToCollection(
-        dragData.sourceId,
-        dragData.collectionId,
-        rowDropData.collectionId,
-        rowDropData.sourceId,
-      )
-      return
-    }
-
-    if (collectionDropData) {
-      sourceCollections.actions.moveSourceToCollection(
-        dragData.sourceId,
-        dragData.collectionId,
-        collectionDropData.collectionId,
-      )
-    }
-  }
-
-  function handleDragCancel(_event: DragCancelEvent) {
-    setActiveDrag(null)
-  }
-
-  function handleAddSourceUrl(value: StandardSourceAddDialogValue) {
-    if (value.tagMode !== 'new') {
-      return
-    }
-
-    const normalizedNewTagName = value.newTagName.trim().toLowerCase()
-    const tagAlreadyExists = sourceCollections.collections.some(
-      (collection) => getCollectionLabel(collection).trim().toLowerCase() === normalizedNewTagName,
-    )
-
-    if (!tagAlreadyExists) {
-      sourceCollections.actions.createCollection(value.newTagName)
-    }
-  }
-
   useGsapElementEntrance(panelRef, 'standard-sources-panel', {
     duration: 0.22,
     scale: 0.985,
@@ -241,14 +129,6 @@ export function StandardSourcesPanel({
             <small>
               {showActiveOnly ? visibleSources.length : activeSources}/{sources.length}
             </small>
-            <button
-              type="button"
-              aria-label={t('sourceManagement.addSourceUrlAria')}
-              title={t('sourceManagement.addSourceUrl')}
-              onClick={() => setManagementDialog({ type: 'add-source-url' })}
-            >
-              <PlusIcon />
-            </button>
             <StandardSourceFilterMenu
               activeCount={activeSources}
               totalCount={sources.length}
@@ -286,154 +166,30 @@ export function StandardSourcesPanel({
         </div>
       </header>
       <StandardSourceGroupsToolbar groupCount={sourceCollections.collections.length} />
-      <DndContext
-        sensors={sensors}
-        collisionDetection={sourceCollisionDetection}
-        onDragCancel={handleDragCancel}
-        onDragEnd={handleDragEnd}
-        onDragStart={handleDragStart}
-      >
-        <div className="standard-source-groups">
-          {sourceGroups.map(({ collection, items }) => {
-            const isCollapsed = collapsedGroups.has(collection.id)
-            const collectionLabel = getCollectionLabel(collection)
+      <div className="standard-source-groups">
+        {sourceGroups.map(({ collection, items }) => {
+          const isCollapsed = collapsedGroups.has(collection.id)
+          const collectionLabel = getCollectionLabel(collection)
 
-            return (
-              <StandardSourceGroup
-                key={collection.id}
-                collection={collection}
-                collectionCount={sourceCollections.collections.length}
-                collectionLabel={collectionLabel}
-                collapsed={isCollapsed}
-                draggingSourceId={activeDrag?.sourceId ?? null}
-                items={items}
-                selectedSourceId={selectedSourceId}
-                onAddSources={(nextCollection) => setManagementDialog({ type: 'add-sources', collection: nextCollection })}
-                onDeleteCollection={(nextCollection) => setManagementDialog({ type: 'delete-collection', collection: nextCollection })}
-                onRemoveSourceFromCollection={sourceCollections.actions.removeSourceFromCollection}
-                onRenameCollection={(nextCollection) => setManagementDialog({ type: 'rename-collection', collection: nextCollection })}
-                onRenameSource={(source) => setManagementDialog({ type: 'rename-source', source })}
-                onSelectSource={onSelectSource}
-                onToggle={sourcePanelPreferences.actions.toggleGroup}
-              />
-            )
-          })}
-        </div>
-      </DndContext>
+          return (
+            <StandardSourceGroup
+              key={collection.id}
+              collection={collection}
+              collectionLabel={collectionLabel}
+              collapsed={isCollapsed}
+              items={items}
+              selectedSourceId={selectedSourceId}
+              onSelectSource={onSelectSource}
+              onToggle={sourcePanelPreferences.actions.toggleGroup}
+            />
+          )
+        })}
+      </div>
       <StandardSourceInspector
         libraryCounts={libraryCounts}
         libraryFilter={libraryFilter}
         onSelectLibraryFilter={onSelectLibraryFilter}
       />
-      <StandardSourceAddDialog
-        collections={sourceCollections.collections}
-        getCollectionLabel={getCollectionLabel}
-        open={managementDialog?.type === 'add-source-url'}
-        onOpenChange={(open) => !open && setManagementDialog(null)}
-        onSubmit={handleAddSourceUrl}
-      />
-      <StandardSourceTextDialog
-        description={t('sourceManagement.renameGroupDescription')}
-        initialValue={managementDialog?.type === 'rename-collection' ? getCollectionLabel(managementDialog.collection) : ''}
-        label={t('sourceManagement.groupNameLabel')}
-        open={managementDialog?.type === 'rename-collection'}
-        placeholder={t('sourceManagement.groupNamePlaceholder')}
-        title={t('sourceManagement.renameGroupTitle')}
-        onOpenChange={(open) => !open && setManagementDialog(null)}
-        onSubmit={(value) => {
-          if (managementDialog?.type === 'rename-collection') {
-            sourceCollections.actions.renameCollection(managementDialog.collection.id, value)
-          }
-        }}
-      />
-      <StandardSourceTextDialog
-        description={t('sourceManagement.renameSourceDescription')}
-        initialValue={managementDialog?.type === 'rename-source' ? managementDialog.source.label : ''}
-        label={t('sourceManagement.sourceNameLabel')}
-        open={managementDialog?.type === 'rename-source'}
-        placeholder={t('sourceManagement.sourceNamePlaceholder')}
-        title={t('sourceManagement.renameSourceTitle')}
-        onOpenChange={(open) => !open && setManagementDialog(null)}
-        onSubmit={(value) => {
-          if (managementDialog?.type === 'rename-source') {
-            sourceCollections.actions.renameSource(managementDialog.source.feedSourceId, value)
-          }
-        }}
-      />
-      <StandardSourceMembershipDialog
-        collectionName={managementDialog?.type === 'add-sources' ? getCollectionLabel(managementDialog.collection) : ''}
-        existingSourceIds={managementDialog?.type === 'add-sources' ? managementDialog.collection.sourceIds : []}
-        open={managementDialog?.type === 'add-sources'}
-        sources={sourceCollections.sources}
-        onOpenChange={(open) => !open && setManagementDialog(null)}
-        onSubmit={(sourceIds) => {
-          if (managementDialog?.type === 'add-sources') {
-            sourceCollections.actions.addSourcesToCollection(managementDialog.collection.id, sourceIds)
-          }
-        }}
-      />
-      <StandardSourceDeleteDialog
-        collectionName={managementDialog?.type === 'delete-collection' ? getCollectionLabel(managementDialog.collection) : ''}
-        open={managementDialog?.type === 'delete-collection'}
-        sourceCount={managementDialog?.type === 'delete-collection' ? managementDialog.collection.sourceIds.length : 0}
-        onOpenChange={(open) => !open && setManagementDialog(null)}
-        onConfirm={() => {
-          if (managementDialog?.type === 'delete-collection') {
-            sourceCollections.actions.deleteCollection(managementDialog.collection.id)
-          }
-        }}
-      />
     </aside>
   )
-}
-
-function readSourceDragData(value: unknown): SourceDragData | null {
-  if (!value || typeof value !== 'object') {
-    return null
-  }
-
-  const data = value as Partial<SourceDragData>
-
-  return data.type === 'source' &&
-    typeof data.sourceId === 'string' &&
-    typeof data.collectionId === 'string' &&
-    typeof data.sourceLabel === 'string'
-    ? {
-        collectionId: data.collectionId,
-        sourceId: data.sourceId,
-        sourceLabel: data.sourceLabel,
-        type: 'source',
-      }
-    : null
-}
-
-function readCollectionDropData(value: unknown): SourceCollectionDropData | null {
-  if (!value || typeof value !== 'object') {
-    return null
-  }
-
-  const data = value as Partial<SourceCollectionDropData>
-
-  return data.type === 'source-collection' && typeof data.collectionId === 'string'
-    ? {
-        collectionId: data.collectionId,
-        type: 'source-collection',
-      }
-    : null
-}
-
-function readSourceRowDropData(value: unknown): SourceRowDropData | null {
-  if (!value || typeof value !== 'object') {
-    return null
-  }
-
-  const data = value as Partial<SourceRowDropData>
-
-  return data.type === 'source-row' && typeof data.collectionId === 'string' && typeof data.sourceId === 'string'
-    ? {
-        collectionId: data.collectionId,
-        sourceId: data.sourceId,
-        type: 'source-row',
-      }
-    : null
 }

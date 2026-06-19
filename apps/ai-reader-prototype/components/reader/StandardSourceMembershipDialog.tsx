@@ -40,7 +40,7 @@ export function StandardSourceMembershipDialog({
     }
 
     return availableSources.filter((source) =>
-      normalizeFilter(`${source.label} ${source.category} ${source.registry?.topicTags.join(' ') ?? ''}`).includes(
+      normalizeFilter(`${source.label} ${source.category} ${source.topicTags?.join(' ') ?? ''}`).includes(
         normalizedQuery,
       ),
     )
@@ -113,7 +113,7 @@ export function StandardSourceMembershipDialog({
                     />
                     <span>
                       <strong>{source.label}</strong>
-                      <small>{source.registry?.adapter ?? source.category}</small>
+                      <small>{source.adapter ?? source.category}</small>
                     </span>
                   </label>
                 ))
