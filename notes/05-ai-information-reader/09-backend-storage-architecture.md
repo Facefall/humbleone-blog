@@ -43,7 +43,8 @@ Refresh / Scheduler
 4. RSSHub 原始数据不直接成为页面状态。
 5. 信息源长期保存，只通过 filter 控制展示范围。
 6. `read / saved / favorited / archived / bookmarks / saved_views` 全部入库。
-7. v0.1 不做完整 feed versioning、不做复杂队列、不做独立 RSSHub service、不承诺真正全文搜索。
+7. Web API 不允许直接修改人工维护的 Source Registry base config，只允许生成受限的版本化配置覆盖文件。
+8. v0.1 不做完整 feed versioning、不做复杂队列、不做独立 RSSHub service、不承诺真正全文搜索。
 
 ## 2. 背景与目标
 
@@ -68,6 +69,10 @@ v0.1 的目标不是构建通用 RSS 平台，而是完成个人 AI / coding-age
 
 - SQLite 持久化。
 - Source Registry 配置同步到 DB。
+- Source Registry base config 不可被 Web API 修改。
+- Web API 只能生成受限的 versioned config overlay。
+- Server 启动时读取 base config 和所有 generated overlay，合并成 effective registry。
+- Server 监听 base config 和 generated overlay 目录，配置变化后重新校验并同步 DB。
 - RSSHub endpoint 存储模型。
 - 定时抓取需要的 endpoint 状态字段。
 - 单 endpoint 手动刷新。
@@ -141,6 +146,69 @@ Source Registry 继续由项目配置维护。它回答：
 - 抓取频率是什么。
 - 重要级别是什么。
 - 默认内容类型和栏目是什么。
+
+Source Registry 分为三层：
+
+```text
+base config
+  + generated versioned overlays
+  = effective source registry
+```
+
+### 5.1.1 Base config 不可被 Web 修改
+
+人工维护的 base config 是信息源定义基准。它应该是人类可读、可 Git diff、可审查的配置文件。
+
+规则：
+
+- Web API 不允许直接修改 base config。
+- base config 不保存 secrets、cookies、tokens。
+- base config 可以手动编辑，server file watcher 监听变更。
+- base config 变更必须通过完整 schema 校验后才同步 DB。
+- base config 删除 source 时，DB 只软删除或暂停 source，不删除历史 item。
+
+### 5.1.2 Web 只能生成 versioned overlay
+
+Web 新增来源、改 tag、暂停来源等动作，不直接改 base config，而是生成新的版本化覆盖文件。
+
+示例目录：
+
+```text
+config/source-registry/base.json
+config/source-registry/generated/
+  source-registry.generated.20260619T120301.json
+  source-registry.generated.20260619T124455.json
+```
+
+规则：
+
+- 每次 Web 更新生成一个新 overlay 文件。
+- Server 启动和 file watch 时读取 base config + 所有 overlay。
+- overlay 按文件名时间戳升序合并。
+- 合并后的 effective registry 必须完整校验。
+- 校验失败时不写 DB，继续使用最后一次有效 registry。
+- overlay 只能包含允许字段，例如新增 source、display metadata、tag/group、pause/deprecate 操作。
+- overlay 不能包含 secret。
+- 后续可以增加 compaction，把稳定 overlay 人工合并回 base config。
+
+### 5.1.3 Effective registry 是同步 DB 的唯一输入
+
+Server 不直接把某个单独 config 文件同步进 DB，而是先生成 effective registry：
+
+```text
+load base config
+  -> load generated overlays
+  -> deterministic merge
+  -> validate effective registry
+  -> sync source_families / source_endpoints
+```
+
+所有入口必须复用同一套 effective registry loader：
+
+- server startup
+- file watcher
+- Web config update API
+- debug / admin sync command
 
 ### 5.2 DB 是运行态镜像
 
@@ -733,4 +801,3 @@ v0.1 后端存储通过标准：
 8. 最后再补定时刷新脚本。
 
 实现顺序必须先保持数据闭环，再补复杂体验。
-
