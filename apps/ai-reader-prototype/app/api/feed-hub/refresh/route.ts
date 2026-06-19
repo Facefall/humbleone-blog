@@ -1,5 +1,6 @@
+import { after } from 'next/server'
 import { dailyBrief } from '../../../../lib/prototype-data'
-import { refreshFeedHubBrief } from '../../../../services/feedHub'
+import { getFeedHubBrief, refreshFeedHubBrief } from '../../../../services/feedHub'
 import type { FeedHubResponse } from '../../../../services/feedHub/types'
 
 export const dynamic = 'force-dynamic'
@@ -7,7 +8,15 @@ export const runtime = 'nodejs'
 
 export async function POST() {
   try {
-    const response = await refreshFeedHubBrief({ force: true, hydrateArticles: false })
+    after(async () => {
+      try {
+        await refreshFeedHubBrief({ force: true, hydrateArticles: false })
+      } catch (error) {
+        console.warn('[feed-hub] background refresh failed', error)
+      }
+    })
+
+    const response = await getFeedHubBrief()
 
     return jsonResponse(response)
   } catch (error) {
