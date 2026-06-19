@@ -80,6 +80,14 @@ export function useApiQuery<TData>(
     }
   }, [])
 
+  const setData = useCallback((data: TData) => {
+    setState({
+      data,
+      error: null,
+      status: 'success',
+    })
+  }, [])
+
   useEffect(() => {
     if (!immediate) {
       return undefined
@@ -99,5 +107,6 @@ export function useApiQuery<TData>(
     isSuccess: state.status === 'success',
     isError: state.status === 'error',
     refetch: execute,
+    setData,
   }
 }

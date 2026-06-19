@@ -1,9 +1,20 @@
 import type { DailyBrief, DailySection, DailySectionKind, FeedItem, SourceDeskData, SourceHealth } from '../../lib/prototype-data'
 import { dailyBrief } from '../../lib/prototype-data'
-import { getSourceRegistryRecord, type SourceRegistryRecord } from '../sourceRegistry'
+import {
+  getSourceRegistryRecord,
+  loadEffectiveSourceRegistry,
+  type EffectiveSourceRegistry,
+} from '../sourceRegistry'
+import { hydrateFeedItemsWithArticleContent } from './articleContent'
+import {
+  getDueFeedHubSources,
+  readSourceResultsFromState,
+  readStoredFeedSources,
+  upsertFeedHubSourceResult,
+} from './feedHubRepository'
 import { normalizeRSSHubItems } from './normalize'
 import { requestRSSHubRoute } from './rsshubClient'
-import { feedHubRsshubSources } from './rsshubSources'
+import { getFeedHubRsshubSources } from './rsshubSources'
 import type { FeedHubResponse, FeedHubSourceConfig, FeedHubSourceResult, NormalizedFeedSource } from './types'
 
 const sectionMeta: Record<DailySectionKind, Pick<DailySection, 'title' | 'description'>> = {
@@ -23,17 +34,100 @@ const sectionMeta: Record<DailySectionKind, Pick<DailySection, 'title' | 'descri
 
 export async function getFeedHubBrief(): Promise<FeedHubResponse> {
   const fetchedAt = new Date().toISOString()
-  const sourceOutputs = await Promise.all(feedHubRsshubSources.filter((source) => source.enabled).map(fetchRSSHubSource))
-  const normalizedSources = sourceOutputs.flatMap((output) => output.source ?? [])
-  const sourceResults = sourceOutputs.map((output) => output.result)
+  const sourceRegistry = await loadEffectiveSourceRegistry()
+  const feedHubRsshubSources = getFeedHubRsshubSources(sourceRegistry)
+  const sourceEntries = getFeedHubSourceEntries(feedHubRsshubSources, sourceRegistry)
+  const normalizedSources = readStoredFeedSources(sourceEntries)
+  const sourceResults = readSourceResultsFromState(feedHubRsshubSources)
+
+  return buildFeedHubResponse({
+    fetchedAt,
+    feedHubRsshubSources,
+    normalizedSources,
+    sourceRegistry,
+    sourceResults,
+  })
+}
+
+export async function refreshFeedHubBrief({
+  force = false,
+  hydrateArticles = false,
+}: {
+  force?: boolean
+  hydrateArticles?: boolean
+} = {}): Promise<FeedHubResponse> {
+  const fetchedAt = new Date().toISOString()
+  const sourceRegistry = await loadEffectiveSourceRegistry()
+  const feedHubRsshubSources = getFeedHubRsshubSources(sourceRegistry)
+  const dueSources = getDueFeedHubSources({
+    force,
+    now: new Date(fetchedAt),
+    sources: feedHubRsshubSources,
+  })
+  const sourceOutputs = await Promise.all(
+    dueSources.map((source) => fetchRSSHubSource(source, sourceRegistry)),
+  )
+  const refreshSources = sourceOutputs.flatMap((output) => output.source ?? [])
+  const persistedRefreshSources = hydrateArticles
+    ? await hydrateNormalizedFeedSources(refreshSources)
+    : refreshSources
+  const refreshSourceById = new Map(
+    persistedRefreshSources.map((source) => [source.config.sourceId, source]),
+  )
+
+  sourceOutputs.forEach((output) => {
+    upsertFeedHubSourceResult({
+      config: output.config,
+      fetchedAt,
+      result: output.result,
+      source: refreshSourceById.get(output.config.sourceId),
+    })
+  })
+
+  const sourceEntries = getFeedHubSourceEntries(feedHubRsshubSources, sourceRegistry)
+  const normalizedSources = readStoredFeedSources(sourceEntries)
+  const sourceResults = readSourceResultsFromState(feedHubRsshubSources)
+
+  return buildFeedHubResponse({
+    fetchedAt,
+    feedHubRsshubSources,
+    normalizedSources,
+    sourceRegistry,
+    sourceResults,
+  })
+}
+
+function buildFeedHubResponse({
+  fetchedAt,
+  feedHubRsshubSources,
+  normalizedSources,
+  sourceRegistry,
+  sourceResults,
+}: {
+  fetchedAt: string
+  feedHubRsshubSources: FeedHubSourceConfig[]
+  normalizedSources: NormalizedFeedSource[]
+  sourceRegistry: EffectiveSourceRegistry
+  sourceResults: FeedHubSourceResult[]
+}): FeedHubResponse {
   const sections = buildSections(normalizedSources)
   const items = sections.flatMap((section) => section.items)
+  const sourceDesk = buildSourceDesk(
+    normalizedSources,
+    sourceResults,
+    fetchedAt,
+    sourceRegistry,
+    feedHubRsshubSources,
+  )
 
   if (!items.length) {
     return {
       mode: 'fallback',
       fetchedAt,
-      brief: dailyBrief,
+      brief: {
+        ...dailyBrief,
+        sourceDesk,
+      },
       sourceResults,
     }
   }
@@ -50,7 +144,7 @@ export async function getFeedHubBrief(): Promise<FeedHubResponse> {
       judgment: `RSSHub 已同步 ${items.length} 条 AI / coding-agent 高信号更新，优先阅读官方工程更新和工具 changelog。`,
       itemCount: items.length,
       selectedItemId,
-      sourceDesk: buildSourceDesk(normalizedSources, sourceResults, fetchedAt),
+      sourceDesk,
       sections,
       reader: {
         skin: 'postmodern_newspaper',
@@ -64,11 +158,12 @@ export async function getFeedHubBrief(): Promise<FeedHubResponse> {
   }
 }
 
-async function fetchRSSHubSource(config: FeedHubSourceConfig) {
-  const registry = getSourceRegistryRecord(config.sourceId)
+async function fetchRSSHubSource(config: FeedHubSourceConfig, sourceRegistry: EffectiveSourceRegistry) {
+  const registry = getSourceRegistryRecord(sourceRegistry, config.sourceId)
 
   if (!registry) {
     return {
+      config,
       result: {
         sourceId: config.sourceId,
         rsshubRoute: config.rsshubRoute,
@@ -89,6 +184,7 @@ async function fetchRSSHubSource(config: FeedHubSourceConfig) {
     })
 
     return {
+      config,
       result: {
         sourceId: config.sourceId,
         rsshubRoute: config.rsshubRoute,
@@ -103,6 +199,7 @@ async function fetchRSSHubSource(config: FeedHubSourceConfig) {
     }
   } catch (error) {
     return {
+      config,
       result: {
         sourceId: config.sourceId,
         rsshubRoute: config.rsshubRoute,
@@ -112,6 +209,28 @@ async function fetchRSSHubSource(config: FeedHubSourceConfig) {
       } satisfies FeedHubSourceResult,
     }
   }
+}
+
+function getFeedHubSourceEntries(
+  feedHubRsshubSources: FeedHubSourceConfig[],
+  sourceRegistry: EffectiveSourceRegistry,
+) {
+  return feedHubRsshubSources.flatMap((config) => {
+    const registry = getSourceRegistryRecord(sourceRegistry, config.sourceId)
+
+    return registry ? [{ config, registry }] : []
+  })
+}
+
+async function hydrateNormalizedFeedSources(sources: NormalizedFeedSource[]) {
+  const items = sources.flatMap((source) => source.items)
+  const hydratedItems = await hydrateFeedItemsWithArticleContent(items)
+  const hydratedItemById = new Map(hydratedItems.map((item) => [item.id, item]))
+
+  return sources.map((source) => ({
+    ...source,
+    items: source.items.map((item) => hydratedItemById.get(item.id) ?? item),
+  }))
 }
 
 function buildSections(sources: NormalizedFeedSource[]): DailySection[] {
@@ -133,38 +252,35 @@ function buildSourceDesk(
   sources: NormalizedFeedSource[],
   sourceResults: FeedHubSourceResult[],
   fetchedAt: string,
+  sourceRegistry: EffectiveSourceRegistry,
+  feedHubRsshubSources: FeedHubSourceConfig[],
 ): SourceDeskData {
-  const sourceIds = new Set(feedHubRsshubSources.map((source) => source.sourceId))
   const itemsBySourceId = new Map(sources.map((source) => [source.config.sourceId, source.items]))
   const resultBySourceId = new Map(sourceResults.map((result) => [result.sourceId, result]))
-  const sourceSlips = Array.from(sourceIds)
-    .map((sourceId) => {
-      const registry = getSourceRegistryRecord(sourceId)
-
-      if (!registry) {
-        return null
-      }
-
-      const items = itemsBySourceId.get(sourceId) ?? []
-      const result = resultBySourceId.get(sourceId)
+  const feedHubSourceIds = new Set(feedHubRsshubSources.map((source) => source.sourceId))
+  const sourceSlips = sourceRegistry.records
+    .map((registry) => {
+      const items = itemsBySourceId.get(registry.sourceId) ?? []
+      const result = resultBySourceId.get(registry.sourceId)
       const health = getSourceHealth(result)
 
       return {
-        id: sourceIdToSlipId(sourceId),
+        id: sourceIdToSlipId(registry.sourceId),
         kind: 'source_slip' as const,
         label: registry.displayName,
         count: items.length || undefined,
         sourceFamily: registry.sourceFamily,
         evidenceLevel: registry.evidenceLevel,
         health,
-        state: health === 'failed' ? 'failed' as const : items.length ? 'new' as const : 'default' as const,
+        state: resolveSourceSlipState(health, items.length, feedHubSourceIds.has(registry.sourceId)),
         description: registry.whyFollow,
+        contentType: registry.contentType,
+        topicTags: registry.topicTags,
+        adapter: registry.adapter,
       }
     })
-    .filter((source): source is NonNullable<typeof source> => Boolean(source))
 
   const itemCount = sources.reduce((total, source) => total + source.items.length, 0)
-  const activeCount = sourceResults.filter((result) => result.status === 'ok').length
   const failedCount = sourceResults.filter((result) => result.status === 'failed').length
 
   return {
@@ -183,35 +299,31 @@ function buildSourceDesk(
       },
       ...dailyBrief.sourceDesk.navigation.filter((item) => item.id !== 'nav-today'),
     ],
-    sourceGroups: [
-      {
-        id: 'group-all-sources',
-        kind: 'source_group',
-        label: 'All Sources',
-        count: sourceSlips.length,
-        health: failedCount ? 'quiet' : 'fresh',
-        state: 'default',
-      },
-      {
-        id: 'group-high-signal',
-        kind: 'source_group',
-        label: 'High Signal',
-        count: activeCount,
-        health: activeCount ? 'fresh' : 'quiet',
-        state: activeCount ? 'new' : 'default',
-        description: 'RSSHub 当前成功拉取的高信号源。',
-      },
-      {
-        id: 'group-failed',
-        kind: 'source_group',
-        label: 'Needs Repair',
-        count: failedCount,
-        health: failedCount ? 'failed' : 'quiet',
-        state: failedCount ? 'failed' : 'default',
-      },
-    ],
+    sourceGroups: sourceRegistry.groups.map((group) => ({
+      id: group.id,
+      kind: 'source_group' as const,
+      label: group.name,
+      count: group.sourceIds.length,
+      health: failedCount ? 'quiet' : 'fresh',
+      state: group.sourceIds.some((sourceId) => resultBySourceId.get(sourceId)?.status === 'ok')
+        ? 'new' as const
+        : 'default' as const,
+    })),
+    sourceCollections: sourceRegistry.groups,
     sourceSlips,
   }
+}
+
+function resolveSourceSlipState(health: SourceHealth, itemCount: number, isFeedHubSource: boolean) {
+  if (health === 'failed') {
+    return 'failed' as const
+  }
+
+  if (itemCount) {
+    return 'new' as const
+  }
+
+  return isFeedHubSource ? 'stale' as const : 'default' as const
 }
 
 function getSourceHealth(result: FeedHubSourceResult | undefined): SourceHealth {

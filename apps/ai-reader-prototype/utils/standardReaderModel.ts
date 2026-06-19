@@ -1,5 +1,4 @@
 import type { DailyBrief, FeedItem } from '../lib/prototype-data'
-import { getSourceRegistryRecord } from '../services/sourceRegistry'
 import type { StandardArticle, StandardSource } from '../types/reader'
 
 const articleImages = [
@@ -29,15 +28,13 @@ export function flattenArticles(brief: DailyBrief): StandardArticle[] {
 export function buildSources(brief: DailyBrief): StandardSource[] {
   return brief.sourceDesk.sourceSlips.map((source) => {
     const feedSourceId = source.id.replace(/^slip-/, 'source-')
-    const registry = getSourceRegistryRecord(feedSourceId)
 
     return {
       ...source,
       category: source.sourceFamily ?? 'general',
       active: source.health !== 'failed' && source.state !== 'stale',
-      contentType: registry?.contentType ?? (source.sourceFamily === 'community' ? 'social' : 'article'),
+      contentType: source.contentType ?? (source.sourceFamily === 'community' ? 'social' : 'article'),
       feedSourceId,
-      registry,
     }
   })
 }

@@ -11,3 +11,11 @@ export function getFeedHubBrief(options?: ApiRequestOptions) {
     },
   })
 }
+
+export function refreshFeedHubBrief(options?: ApiRequestOptions) {
+  return request<FeedHubResponse>({
+    method: 'POST',
+    signal: options?.signal,
+    url: '/api/feed-hub/refresh',
+  })
+}

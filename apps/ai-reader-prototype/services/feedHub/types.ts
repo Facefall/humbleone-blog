@@ -7,6 +7,7 @@ export type FeedHubSourceConfig = {
   section: DailySectionKind
   maxItems: number
   enabled: boolean
+  updateFrequency: string
 }
 
 export type FeedHubSourceResult = {

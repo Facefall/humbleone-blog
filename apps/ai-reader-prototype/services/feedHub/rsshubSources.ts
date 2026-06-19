@@ -1,25 +1,19 @@
 import type { FeedHubSourceConfig } from './types'
+import type { EffectiveSourceRegistry } from '../sourceRegistry'
 
-export const feedHubRsshubSources: FeedHubSourceConfig[] = [
-  {
-    sourceId: 'source-anthropic-engineering',
-    rsshubRoute: '/anthropic/engineering',
-    section: 'hard_news',
-    maxItems: 2,
-    enabled: true,
-  },
-  {
-    sourceId: 'source-claude-code-changelog',
-    rsshubRoute: '/claude/code/changelog',
-    section: 'hard_news',
-    maxItems: 2,
-    enabled: true,
-  },
-  {
-    sourceId: 'source-cursor-changelog',
-    rsshubRoute: '/cursor/changelog',
-    section: 'cases',
-    maxItems: 2,
-    enabled: true,
-  },
-]
+export function getFeedHubRsshubSources(registry: EffectiveSourceRegistry): FeedHubSourceConfig[] {
+  return registry.records.flatMap((record) => {
+    if (record.fetchMethod !== 'rsshub' || !record.rsshubRoute || !record.feedHub) {
+      return []
+    }
+
+    return [{
+      sourceId: record.sourceId,
+      rsshubRoute: record.rsshubRoute,
+      section: record.feedHub.section,
+      maxItems: record.feedHub.maxItems,
+      enabled: record.feedHub.enabled,
+      updateFrequency: record.updateFrequency,
+    }]
+  })
+}

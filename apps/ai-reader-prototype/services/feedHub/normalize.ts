@@ -56,6 +56,7 @@ function normalizeRSSHubItem({
   const publishedAt = normalizeDate(item.pubDate ?? item.updated ?? fetchedAt)
   const url = item.link ?? data.link ?? registry.officialUrl
   const summary = buildSummary(item)
+  const body = buildBody(item, summary, registry, config)
   const title = stripHtml(item.title).trim() || registry.displayName
   const sectionLabel = sectionLabels[config.section]
   const baseScore = priorityScore[registry.priority]
@@ -88,10 +89,7 @@ function normalizeRSSHubItem({
     reader: {
       kicker: `${sectionLabel} / ${registry.displayName}`,
       headline: title,
-      body: [
-        summary || `${registry.displayName} 发布了新条目，需要进一步阅读原文判断具体影响。`,
-        `${registry.whyFollow} 当前条目来自 RSSHub 路由 ${config.rsshubRoute}，原始链接保留在 evidence links 中。`,
-      ],
+      body,
       aiSummary: summary || title,
       sourceProof: [
         `Source Registry: ${registry.displayName} / ${registry.fetchMethod} / ${registry.evidenceLevel}.`,
@@ -111,8 +109,25 @@ function buildItemId(sourceId: string, item: RsshubDataItem, index: number) {
 }
 
 function buildSummary(item: RsshubDataItem) {
-  const value = item.description ?? item.content?.text ?? item.content?.html ?? ''
-  return truncate(stripHtml(value).replace(/\s+/g, ' ').trim(), 180)
+  return truncate(readItemText(item).replace(/\s+/g, ' ').trim(), 180)
+}
+
+function buildBody(
+  item: RsshubDataItem,
+  summary: string,
+  registry: SourceRegistryRecord,
+  config: FeedHubSourceConfig,
+) {
+  const paragraphs = splitParagraphs(readItemText(item))
+
+  if (paragraphs.length) {
+    return paragraphs
+  }
+
+  return [
+    summary || `${registry.displayName} 发布了新条目，需要进一步阅读原文判断具体影响。`,
+    `${registry.whyFollow} 当前条目来自 RSSHub 路由 ${config.rsshubRoute}，原始链接保留在 evidence links 中。`,
+  ]
 }
 
 function normalizeDate(value: string | number | Date) {
@@ -166,6 +181,65 @@ function stripHtml(value: string) {
     .replace(/&gt;/g, '>')
     .replace(/&#39;/g, "'")
     .replace(/&quot;/g, '"')
+}
+
+function readItemText(item: RsshubDataItem) {
+  const value = item.content?.text ?? item.content?.html ?? item.description ?? ''
+
+  return stripHtml(preserveTextBreaks(value)).trim()
+}
+
+function preserveTextBreaks(value: string) {
+  return value
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|section|article|h[1-6]|li|blockquote)>/gi, '\n\n')
+}
+
+function splitParagraphs(value: string) {
+  const normalized = value
+    .replace(/\r\n/g, '\n')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n[ \t]+/g, '\n')
+    .trim()
+
+  if (!normalized) {
+    return []
+  }
+
+  const paragraphs = normalized
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.replace(/\s+/g, ' ').trim())
+    .filter((paragraph) => paragraph.length > 0)
+
+  if (paragraphs.length > 1) {
+    return paragraphs
+  }
+
+  return splitLongParagraph(normalized)
+}
+
+function splitLongParagraph(value: string) {
+  const sentences = value.split(/(?<=[.!?。！？])\s+/)
+  const paragraphs: string[] = []
+  let current = ''
+
+  sentences.forEach((sentence) => {
+    const next = current ? `${current} ${sentence}` : sentence
+
+    if (next.length > 420 && current) {
+      paragraphs.push(current)
+      current = sentence
+      return
+    }
+
+    current = next
+  })
+
+  if (current) {
+    paragraphs.push(current)
+  }
+
+  return paragraphs
 }
 
 function truncate(value: string, maxLength: number) {
