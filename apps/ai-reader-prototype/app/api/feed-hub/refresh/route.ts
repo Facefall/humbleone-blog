@@ -1,6 +1,7 @@
 import { after } from 'next/server'
 import { dailyBrief } from '../../../../lib/prototype-data'
 import { getFeedHubBrief, refreshFeedHubBrief } from '../../../../services/feedHub'
+import { isFeedHubDebugEnabled } from '../../../../services/feedHub/feedHubLogger'
 import type { FeedHubResponse } from '../../../../services/feedHub/types'
 
 export const dynamic = 'force-dynamic'
@@ -8,13 +9,19 @@ export const runtime = 'nodejs'
 
 export async function POST() {
   try {
-    after(async () => {
-      try {
-        await refreshFeedHubBrief({ force: true, hydrateArticles: false })
-      } catch (error) {
-        console.warn('[feed-hub] background refresh failed', error)
-      }
-    })
+    const syncOptions = { force: true, hydrateArticles: false } as const
+
+    if (isFeedHubDebugEnabled()) {
+      await refreshFeedHubBrief(syncOptions)
+    } else {
+      after(async () => {
+        try {
+          await refreshFeedHubBrief(syncOptions)
+        } catch (error) {
+          console.warn('[feed-hub] background refresh failed', error)
+        }
+      })
+    }
 
     const response = await getFeedHubBrief()
 

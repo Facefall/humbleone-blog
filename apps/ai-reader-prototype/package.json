@@ -25,6 +25,7 @@
     "@stitches/react": "1.2.8",
     "axios": "^1.18.0",
     "better-sqlite3": "^12.11.1",
+    "chalk": "5",
     "chokidar": "^5.0.0",
     "dayjs": "^1.11.19",
     "dotenv": "^17.4.2",
