@@ -26,6 +26,23 @@ pnpm install
 pnpm dev
 ```
 
+`pnpm dev` 会同时启动：
+
+- VitePress blog: `http://localhost:5173/humbleone-blog/`
+- AI Reader: `http://localhost:5173/humbleone-blog/reader/`
+
+AI Reader 仍然由 `apps/ai-reader-prototype` 的 Next.js 服务承载，blog 开发服务只负责本地代理 `/reader`、`/_next`、`/api` 和 reader 的静态资源路径。这样不会改动 reader 现有的 SQLite、Chokidar、RSSHub 或 `.env` 架构。
+
+如果 `http://localhost:3000` 已经有 reader dev server 在运行，集成脚本会复用它，只启动 blog 代理层。
+blog 顶部的 `Reader` 导航入口只会在集成启动时显示，普通 `pnpm build` 不会输出这个本地代理入口。
+
+只启动单独应用：
+
+```powershell
+pnpm blog:dev
+pnpm reader:dev
+```
+
 构建和预览：
 
 ```powershell

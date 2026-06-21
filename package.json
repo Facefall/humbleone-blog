@@ -12,11 +12,13 @@
     "node": ">=24.14.0"
   },
   "scripts": {
-    "dev": "vitepress dev",
+    "dev": "node scripts/dev-integrated.mjs",
+    "blog:dev": "vitepress dev",
     "build": "vitepress build",
     "serve": "vitepress preview",
     "preview": "vitepress preview",
     "reader": "pnpm --filter @humbleone/ai-reader-prototype dev",
+    "reader:dev": "pnpm --filter @humbleone/ai-reader-prototype dev",
     "reader:build": "pnpm --filter @humbleone/ai-reader-prototype build",
     "reader:typecheck": "pnpm --filter @humbleone/ai-reader-prototype typecheck",
     "reader:storybook": "pnpm --filter @humbleone/ai-reader-prototype storybook",

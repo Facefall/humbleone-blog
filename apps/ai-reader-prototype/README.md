@@ -9,8 +9,11 @@ Prototype question:
 Run from the repository root:
 
 ```powershell
-pnpm reader:dev
+pnpm dev
 ```
+
+The integrated dev server mounts this app at `http://localhost:5173/humbleone-blog/reader/`.
+To run only the reader, use `pnpm reader:dev`.
 
 Variant URLs:
 
@@ -42,4 +45,3 @@ Sarasa Mono SC is self-hosted from `public/fonts/`. After placing `SarasaMonoSC-
 ```powershell
 pnpm --filter @humbleone/ai-reader-prototype fetch:fonts
 ```
-

@@ -32,6 +32,22 @@ const RSS_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24
 
 const SITE_BASE = '/humbleone-blog/'
 const SITE_URL = 'https://facefall.github.io/humbleone-blog/'
+const READER_PROXY_TARGET = process.env.VITE_READER_TARGET ?? 'http://localhost:3000'
+const READER_NAV_ENABLED = process.env.VITE_READER_INTEGRATED === 'true'
+
+function rewriteReaderPath(path: string) {
+  return path
+    .replace(/^\/humbleone-blog\/reader(?=\/|$)/, '')
+    .replace(/^\/reader(?=\/|$)/, '') || '/'
+}
+
+function readerProxy() {
+  return {
+    target: READER_PROXY_TARGET,
+    changeOrigin: true,
+    ws: true,
+  }
+}
 
 export default async () => {
   const [posts, notesSidebar] = await Promise.all([
@@ -53,6 +69,7 @@ export default async () => {
       { text: '文章', link: '/blogs/' },
       { text: '笔记', link: notesSidebar[0]?.items[0]?.path ?? '/notes/' },
       { text: '归档', link: '/archives' },
+      ...(READER_NAV_ENABLED ? [{ text: 'Reader', link: `${SITE_BASE}reader/`, target: '_self' }] : []),
       { text: '关于', link: '/about' },
     ],
     socialLinks: [
@@ -86,6 +103,25 @@ export default async () => {
     lastUpdated: false,
     themeConfig: themeConfig as any,
     buildEnd: buildBlogRSS,
+    vite: {
+      server: {
+        proxy: {
+          '/reader': {
+            ...readerProxy(),
+            rewrite: rewriteReaderPath,
+          },
+          [`${SITE_BASE}reader`]: {
+            ...readerProxy(),
+            rewrite: rewriteReaderPath,
+          },
+          '/_next': readerProxy(),
+          '/api': readerProxy(),
+          '/fonts': readerProxy(),
+          '/standard-media': readerProxy(),
+          '/textures': readerProxy(),
+        },
+      },
+    },
     markdown: {
       theme: {
         light: 'vitesse-light',
