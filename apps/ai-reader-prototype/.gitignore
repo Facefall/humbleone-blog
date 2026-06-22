@@ -1,7 +1,10 @@
 .cache/
 data/*.sqlite
 data/*.sqlite-*
+logs/
 .env
 .env.local
 public/fonts/*.7z
 public/fonts/SarasaMonoSC-TTF-*/
+.codex-screenshots/
+config/source-registry/generated/*.json

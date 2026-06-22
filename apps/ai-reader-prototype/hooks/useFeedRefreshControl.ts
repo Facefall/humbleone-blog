@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { readerLog } from '../lib/logging/readerLog'
 import type { DailyBrief } from '../lib/prototype-data'
 
 type UseFeedRefreshControlOptions = {
@@ -31,14 +32,19 @@ export function useFeedRefreshControl({
     const startedAt = Date.now()
 
     setFeedRefreshing(true)
+    readerLog.info('feed.refresh.start', { articleCount })
 
     try {
       const nextBrief = await onRefreshFeed?.()
       const count = nextBrief?.itemCount ?? articleCount
 
+      readerLog.info('feed.refresh.success', { itemCount: count })
       onNotice(labels.refreshed(count))
     } catch (error) {
-      onNotice(error instanceof Error ? error.message : labels.refreshFailed)
+      const message = error instanceof Error ? error.message : labels.refreshFailed
+
+      readerLog.error('feed.refresh.failed', { message })
+      onNotice(message)
     } finally {
       const remainingMs = Math.max(0, minDurationMs - (Date.now() - startedAt))
 
