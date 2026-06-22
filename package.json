@@ -19,6 +19,8 @@
     "preview": "vitepress preview",
     "reader": "pnpm --filter @humbleone/ai-reader-prototype dev",
     "reader:dev": "pnpm --filter @humbleone/ai-reader-prototype dev",
+    "reader:start": "pnpm --filter @humbleone/ai-reader-prototype start",
+    "reader:pm2": "pm2 start pnpm --name ai-reader-prototype -- run reader:start",
     "reader:build": "pnpm --filter @humbleone/ai-reader-prototype build",
     "reader:typecheck": "pnpm --filter @humbleone/ai-reader-prototype typecheck",
     "reader:storybook": "pnpm --filter @humbleone/ai-reader-prototype storybook",
