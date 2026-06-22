@@ -1,7 +1,7 @@
 .cache/
 data/*.sqlite
 data/*.sqlite-*
-logs/
+/logs/
 .env
 .env.local
 public/fonts/*.7z
