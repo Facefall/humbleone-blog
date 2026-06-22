@@ -24,7 +24,8 @@
     "reader:build": "pnpm --filter @humbleone/ai-reader-prototype build",
     "reader:typecheck": "pnpm --filter @humbleone/ai-reader-prototype typecheck",
     "reader:storybook": "pnpm --filter @humbleone/ai-reader-prototype storybook",
-    "reader:build-storybook": "pnpm --filter @humbleone/ai-reader-prototype build-storybook"
+    "reader:build-storybook": "pnpm --filter @humbleone/ai-reader-prototype build-storybook",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@shikijs/vitepress-twoslash": "^3.23.0",
@@ -34,6 +35,7 @@
     "fast-glob": "^3.3.3",
     "feed": "^4.2.2",
     "gray-matter": "^4.0.3",
+    "husky": "^9.1.7",
     "markdown-it": "^14.1.1",
     "markdown-it-mathjax3": "^4.3.2",
     "mermaid": "^11.12.2",
