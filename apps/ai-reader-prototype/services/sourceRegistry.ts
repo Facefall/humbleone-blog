@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { watch, type FSWatcher } from 'chokidar'
+import { readerLogger } from './logging/readerLogger'
 import type {
   DailySectionKind,
   EvidenceLevel,
@@ -13,8 +14,18 @@ export type FetchMethod = 'official_rss' | 'official_api' | 'rsshub' | 'custom_s
 
 export type SourceRegistryFeedHubConfig = {
   enabled: boolean
+  lookbackDays: number
   section: DailySectionKind
-  maxItems: number
+}
+
+export type SourceRegistryFeedHubOverride = {
+  enabled?: boolean
+  lookbackDays?: number
+}
+
+export type SourceRegistrySourceOverride = {
+  sourceId: string
+  feedHub?: SourceRegistryFeedHubOverride
 }
 
 export type SourceRegistryRecord = {
@@ -28,6 +39,8 @@ export type SourceRegistryRecord = {
   fetchMethod: FetchMethod
   contentType: SourceContentType
   adapter: string
+  feedUrl?: string
+  apiEndpoint?: string
   rsshubRoute?: string
   updateFrequency: string
   evidenceLevel: EvidenceLevel
@@ -46,6 +59,7 @@ type SourceRegistryFile = {
   schemaVersion: 1
   sources: SourceRegistryRecord[]
   groups: SourceCollectionConfig[]
+  sourceOverrides: SourceRegistrySourceOverride[]
 }
 
 type SourceRegistryState = {
@@ -56,6 +70,7 @@ type SourceRegistryState = {
 
 const sourceRegistryRootPath = path.join(process.cwd(), 'config', 'source-registry')
 const sourceRegistryBasePath = path.join(sourceRegistryRootPath, 'base.json')
+export const sourceRegistryGeneratedDirPath = path.join(sourceRegistryRootPath, 'generated')
 const sourceRegistryState = getSourceRegistryState()
 const sourceFamilies = new Set<SourceFamily>([
   'model_lab',
@@ -101,6 +116,12 @@ export function getSourceRegistryRecord(registry: EffectiveSourceRegistry, sourc
   return registry.recordById.get(sourceId)
 }
 
+export function getSourceRegistryGeneratedOverridesPath() {
+  const overridePath = process.env.AI_READER_SOURCE_REGISTRY_OVERRIDES_PATH
+
+  return overridePath ? path.resolve(overridePath) : path.join(sourceRegistryGeneratedDirPath, 'overrides.json')
+}
+
 async function readEffectiveSourceRegistry(): Promise<EffectiveSourceRegistry> {
   const files = await readSourceRegistryFiles()
   const records = mergeSourceRegistryFiles(files)
@@ -125,8 +146,9 @@ async function readEffectiveSourceRegistry(): Promise<EffectiveSourceRegistry> {
 
 async function readSourceRegistryFiles(): Promise<SourceRegistryFile[]> {
   const baseFile = await readSourceRegistryFile(sourceRegistryBasePath)
+  const generatedOverrideFile = await readOptionalSourceRegistryFile(getSourceRegistryGeneratedOverridesPath())
 
-  return [baseFile]
+  return [baseFile, generatedOverrideFile].filter((file): file is SourceRegistryFile => Boolean(file))
 }
 
 async function readSourceRegistryFile(filePath: string): Promise<SourceRegistryFile> {
@@ -134,6 +156,18 @@ async function readSourceRegistryFile(filePath: string): Promise<SourceRegistryF
   const parsedConfig = JSON.parse(rawConfig) as unknown
 
   return parseSourceRegistryFile(parsedConfig)
+}
+
+async function readOptionalSourceRegistryFile(filePath: string): Promise<SourceRegistryFile | null> {
+  try {
+    return await readSourceRegistryFile(filePath)
+  } catch (error) {
+    if (isNodeError(error, 'ENOENT')) {
+      return null
+    }
+
+    throw error
+  }
 }
 
 function mergeSourceRegistryFiles(files: SourceRegistryFile[]) {
@@ -149,6 +183,17 @@ function mergeSourceRegistryFiles(files: SourceRegistryFile[]) {
       recordsById.set(record.sourceId, record)
     })
   })
+  files.forEach((file) => {
+    file.sourceOverrides.forEach((override) => {
+      const currentRecord = recordsById.get(override.sourceId)
+
+      if (!currentRecord) {
+        throw new Error(`Source registry override references missing source: ${override.sourceId}`)
+      }
+
+      recordsById.set(override.sourceId, applySourceRegistryOverride(currentRecord, override))
+    })
+  })
 
   return orderedIds.map((sourceId) => {
     const record = recordsById.get(sourceId)
@@ -159,6 +204,44 @@ function mergeSourceRegistryFiles(files: SourceRegistryFile[]) {
 
     return record
   })
+}
+
+function applySourceRegistryOverride(
+  record: SourceRegistryRecord,
+  override: SourceRegistrySourceOverride,
+): SourceRegistryRecord {
+  if (!override.feedHub) {
+    return record
+  }
+
+  if (!record.feedHub) {
+    throw new Error(`Source ${record.sourceId} cannot receive feedHub override before it has feedHub config.`)
+  }
+
+  const nextRecord = {
+    ...record,
+    feedHub: {
+      ...record.feedHub,
+      ...override.feedHub,
+    },
+  }
+  validateEnabledFeedHubEndpoint(nextRecord)
+
+  return nextRecord
+}
+
+function validateEnabledFeedHubEndpoint(record: SourceRegistryRecord) {
+  if (record.fetchMethod === 'rsshub' && record.feedHub?.enabled && !record.rsshubRoute) {
+    throw new Error(`Source ${record.sourceId} is enabled for Feed Hub via RSSHub but has no rsshubRoute.`)
+  }
+
+  if (record.fetchMethod === 'official_rss' && record.feedHub?.enabled && !record.feedUrl) {
+    throw new Error(`Source ${record.sourceId} is enabled for Feed Hub via official RSS but has no feedUrl.`)
+  }
+
+  if (record.fetchMethod === 'official_api' && record.feedHub?.enabled && !record.apiEndpoint) {
+    throw new Error(`Source ${record.sourceId} is enabled for Feed Hub via official API but has no apiEndpoint.`)
+  }
 }
 
 function mergeSourceRegistryGroups(files: SourceRegistryFile[]) {
@@ -216,7 +299,7 @@ function ensureSourceRegistryWatcher() {
     return
   }
 
-  sourceRegistryState.watcher = watch(sourceRegistryBasePath, {
+  sourceRegistryState.watcher = watch([sourceRegistryBasePath, getSourceRegistryGeneratedOverridesPath()], {
     awaitWriteFinish: {
       stabilityThreshold: 120,
       pollInterval: 40,
@@ -229,7 +312,9 @@ function ensureSourceRegistryWatcher() {
     .on('change', invalidateSourceRegistryCache)
     .on('unlink', invalidateSourceRegistryCache)
     .on('error', (error) => {
-      console.warn('[source-registry] file watcher failed', error)
+      readerLogger.warn('source-registry', 'file watcher failed', {
+        error: error instanceof Error ? error.message : String(error),
+      })
     })
 }
 
@@ -260,14 +345,54 @@ function parseSourceRegistryFile(value: unknown): SourceRegistryFile {
     throw new Error('Source registry config sources must be an array when provided.')
   }
 
+  if (typeof value.sourceOverrides !== 'undefined' && !Array.isArray(value.sourceOverrides)) {
+    throw new Error('Source registry config sourceOverrides must be an array when provided.')
+  }
+
   const groupedSourceConfig = parseGroupedSourceConfig(value)
   const flatSources = Array.isArray(value.sources) ? value.sources.map(parseSourceRegistryRecord) : []
   const flatGroups = Array.isArray(value.groups) ? value.groups.map(parseSourceRegistryGroup) : []
+  const sourceOverrides = Array.isArray(value.sourceOverrides)
+    ? value.sourceOverrides.map(parseSourceRegistrySourceOverride)
+    : []
 
   return {
     schemaVersion: 1,
     groups: [...flatGroups, ...groupedSourceConfig.map((group) => group.group)],
+    sourceOverrides,
     sources: [...flatSources, ...groupedSourceConfig.flatMap((group) => group.sources)],
+  }
+}
+
+function parseSourceRegistrySourceOverride(value: unknown): SourceRegistrySourceOverride {
+  if (!isRecord(value)) {
+    throw new Error('Source registry sourceOverride must be an object.')
+  }
+
+  const sourceId = readRequiredStringAlias(value, ['sourceId', 'id'], 'sourceId')
+  const feedHub = parseFeedHubOverride(value.feedHub, sourceId)
+
+  return {
+    sourceId,
+    ...(feedHub ? { feedHub } : {}),
+  }
+}
+
+function parseFeedHubOverride(value: unknown, sourceId: string): SourceRegistryFeedHubOverride | undefined {
+  if (typeof value === 'undefined') {
+    return undefined
+  }
+
+  if (!isRecord(value)) {
+    throw new Error(`Source ${sourceId} feedHub override must be an object.`)
+  }
+
+  const enabled = readOptionalBoolean(value, 'enabled')
+  const lookbackDays = readOptionalPositiveInteger(value, 'lookbackDays')
+
+  return {
+    ...(typeof enabled === 'boolean' ? { enabled } : {}),
+    ...(lookbackDays ? { lookbackDays } : {}),
   }
 }
 
@@ -338,6 +463,8 @@ function parseSourceRegistryRecord(value: unknown): SourceRegistryRecord {
   const fetchMethod = readRequiredEnum(value, 'fetchMethod', fetchMethods)
   const contentType = readRequiredEnum(value, 'contentType', contentTypes)
   const adapter = readRequiredString(value, 'adapter')
+  const feedUrl = readOptionalString(value, 'feedUrl')
+  const apiEndpoint = readOptionalString(value, 'apiEndpoint')
   const rsshubRoute = readOptionalString(value, 'rsshubRoute')
   const updateFrequency = readRequiredString(value, 'updateFrequency')
   const evidenceLevel = readRequiredEnum(value, 'evidenceLevel', evidenceLevels)
@@ -345,11 +472,7 @@ function parseSourceRegistryRecord(value: unknown): SourceRegistryRecord {
   const riskNotes = readRequiredString(value, 'riskNotes')
   const feedHub = parseFeedHubConfig(value.feedHub, sourceId)
 
-  if (fetchMethod === 'rsshub' && feedHub?.enabled && !rsshubRoute) {
-    throw new Error(`Source ${sourceId} is enabled for Feed Hub via RSSHub but has no rsshubRoute.`)
-  }
-
-  return {
+  const record = {
     sourceId,
     displayName,
     sourceFamily,
@@ -360,6 +483,8 @@ function parseSourceRegistryRecord(value: unknown): SourceRegistryRecord {
     fetchMethod,
     contentType,
     adapter,
+    ...(feedUrl ? { feedUrl } : {}),
+    ...(apiEndpoint ? { apiEndpoint } : {}),
     ...(rsshubRoute ? { rsshubRoute } : {}),
     updateFrequency,
     evidenceLevel,
@@ -367,6 +492,9 @@ function parseSourceRegistryRecord(value: unknown): SourceRegistryRecord {
     riskNotes,
     ...(feedHub ? { feedHub } : {}),
   }
+  validateEnabledFeedHubEndpoint(record)
+
+  return record
 }
 
 function parseFeedHubConfig(value: unknown, sourceId: string): SourceRegistryFeedHubConfig | undefined {
@@ -379,13 +507,13 @@ function parseFeedHubConfig(value: unknown, sourceId: string): SourceRegistryFee
   }
 
   const enabled = readBoolean(value, 'enabled')
+  const lookbackDays = readOptionalPositiveInteger(value, 'lookbackDays') ?? 365
   const section = readRequiredEnum(value, 'section', sections)
-  const maxItems = readPositiveInteger(value, 'maxItems')
 
   return {
     enabled,
+    lookbackDays,
     section,
-    maxItems,
   }
 }
 
@@ -497,11 +625,29 @@ function readBoolean(value: Record<string, unknown>, key: string) {
   return nextValue
 }
 
-function readPositiveInteger(value: Record<string, unknown>, key: string) {
+function readOptionalBoolean(value: Record<string, unknown>, key: string) {
   const nextValue = value[key]
 
+  if (typeof nextValue === 'undefined') {
+    return undefined
+  }
+
+  if (typeof nextValue !== 'boolean') {
+    throw new Error(`Source registry field ${key} must be a boolean when provided.`)
+  }
+
+  return nextValue
+}
+
+function readOptionalPositiveInteger(value: Record<string, unknown>, key: string) {
+  const nextValue = value[key]
+
+  if (typeof nextValue === 'undefined') {
+    return undefined
+  }
+
   if (!Number.isInteger(nextValue) || typeof nextValue !== 'number' || nextValue <= 0) {
-    throw new Error(`Source registry field ${key} must be a positive integer.`)
+    throw new Error(`Source registry field ${key} must be a positive integer when provided.`)
   }
 
   return nextValue
@@ -519,6 +665,10 @@ function readRequiredEnum<T extends string>(value: Record<string, unknown>, key:
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function isNodeError(error: unknown, code: string) {
+  return error instanceof Error && 'code' in error && (error as NodeJS.ErrnoException).code === code
 }
 
 function uniqueStrings(values: string[]) {

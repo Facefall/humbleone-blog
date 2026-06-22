@@ -17,10 +17,15 @@
           "fetchMethod": "official_rss",
           "contentType": "article",
           "adapter": "openai.blog.feed",
+          "feedUrl": "https://openai.com/news/rss.xml",
           "updateFrequency": "daily check",
           "evidenceLevel": "official",
           "whyFollow": "Official launch details matter when they change builder workflows or APIs.",
-          "riskNotes": "Marketing posts should not enter the daily brief unless workflow impact is concrete."
+          "riskNotes": "Marketing posts should not enter the daily brief unless workflow impact is concrete.",
+          "feedHub": {
+            "enabled": true,
+            "section": "hard_news"
+          }
         },
         {
           "id": "source-anthropic-engineering",
@@ -40,8 +45,7 @@
           "riskNotes": "Product posts can be broad; keep engineering evidence separate from launch copy.",
           "feedHub": {
             "enabled": true,
-            "section": "hard_news",
-            "maxItems": 2
+            "section": "hard_news"
           }
         },
         {
@@ -62,8 +66,7 @@
           "riskNotes": "Changelog items can be small; keep only workflow-impacting updates in daily picks.",
           "feedHub": {
             "enabled": true,
-            "section": "hard_news",
-            "maxItems": 2
+            "section": "hard_news"
           }
         },
         {
@@ -84,8 +87,28 @@
           "riskNotes": "Product changelog language can be broad; prefer concrete workflow and editor behavior changes.",
           "feedHub": {
             "enabled": true,
-            "section": "cases",
-            "maxItems": 2
+            "section": "cases"
+          }
+        },
+        {
+          "id": "source-google-deepmind-blog",
+          "displayName": "Google DeepMind Blog",
+          "sourceFamily": "model_lab",
+          "topicTags": ["deepmind", "model-release", "ai-research"],
+          "priority": "medium",
+          "language": "en",
+          "officialUrl": "https://deepmind.google/blog/",
+          "fetchMethod": "official_rss",
+          "contentType": "article",
+          "adapter": "official.rss.deepmind.blog",
+          "feedUrl": "https://deepmind.google/blog/rss.xml",
+          "updateFrequency": "daily check",
+          "evidenceLevel": "official",
+          "whyFollow": "DeepMind research and product updates can change model capability assumptions for agent workflows.",
+          "riskNotes": "Research announcements can be broad; prioritize items with practical model, tooling, or benchmark implications.",
+          "feedHub": {
+            "enabled": true,
+            "section": "hard_news"
           }
         }
       ]
@@ -126,6 +149,69 @@
           "evidenceLevel": "github",
           "whyFollow": "Runtime and tool-call changes are direct references for this reader product.",
           "riskNotes": "Changelog language can be implementation-heavy; summarize only verified behavior."
+        },
+        {
+          "id": "source-litomore-blog",
+          "displayName": "LitoMore Blog",
+          "sourceFamily": "builder",
+          "topicTags": ["builder-case", "tooling", "developer-workflow"],
+          "priority": "medium",
+          "language": "en",
+          "officialUrl": "https://litomore.me/",
+          "fetchMethod": "official_rss",
+          "contentType": "article",
+          "adapter": "official.atom.litomore",
+          "feedUrl": "https://litomore.me/atom.xml",
+          "updateFrequency": "daily check",
+          "evidenceLevel": "builder",
+          "whyFollow": "LitoMore's technical notes are useful for concrete developer tooling and workflow observations.",
+          "riskNotes": "The blog is not agent-only; keep only posts with software workflow, tooling, or AI reader relevance in daily picks.",
+          "feedHub": {
+            "enabled": true,
+            "section": "cases"
+          }
+        },
+        {
+          "id": "source-kocoro-releases",
+          "displayName": "Kocoro Releases",
+          "sourceFamily": "project_changelog",
+          "topicTags": ["agent-runtime", "personal-agent", "mcp", "memory"],
+          "priority": "high",
+          "language": "en",
+          "officialUrl": "https://github.com/Kocoro-lab/Kocoro",
+          "fetchMethod": "official_api",
+          "contentType": "article",
+          "adapter": "github.releases.api",
+          "apiEndpoint": "https://api.github.com/repos/Kocoro-lab/Kocoro/releases",
+          "updateFrequency": "daily check",
+          "evidenceLevel": "github",
+          "whyFollow": "Kocoro is a Mac-compatible AI partner with memory, local computer access, browser control, IM channels, and MCP-native integration.",
+          "riskNotes": "Release notes can be implementation-heavy; prefer user-visible agent capability, memory, MCP, and local-control changes.",
+          "feedHub": {
+            "enabled": true,
+            "section": "cases"
+          }
+        },
+        {
+          "id": "source-shannon-releases",
+          "displayName": "Shannon Releases",
+          "sourceFamily": "project_changelog",
+          "topicTags": ["multi-agent", "orchestration", "agent-runtime", "go"],
+          "priority": "high",
+          "language": "en",
+          "officialUrl": "https://github.com/Kocoro-lab/Shannon",
+          "fetchMethod": "official_api",
+          "contentType": "article",
+          "adapter": "github.releases.api",
+          "apiEndpoint": "https://api.github.com/repos/Kocoro-lab/Shannon/releases",
+          "updateFrequency": "daily check",
+          "evidenceLevel": "github",
+          "whyFollow": "Shannon is a production-oriented multi-agent orchestration framework and is relevant to agent runtime architecture.",
+          "riskNotes": "Watch release notes for concrete orchestration semantics and runtime changes rather than general repository activity.",
+          "feedHub": {
+            "enabled": true,
+            "section": "cases"
+          }
         }
       ]
     },
@@ -142,13 +228,18 @@
           "priority": "medium",
           "language": "en",
           "officialUrl": "https://news.ycombinator.com",
-          "fetchMethod": "manual",
+          "fetchMethod": "official_api",
           "contentType": "social",
-          "adapter": "manual.community-watch",
+          "adapter": "hackernews.api.topstories",
+          "apiEndpoint": "https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty",
           "updateFrequency": "twice daily",
           "evidenceLevel": "community",
           "whyFollow": "Discussion threads surface practical friction before it appears in official docs.",
-          "riskNotes": "Community signal is noisy; use it for questions and patterns, not final facts."
+          "riskNotes": "Community signal is noisy; use it for questions and patterns, not final facts.",
+          "feedHub": {
+            "enabled": true,
+            "section": "interesting"
+          }
         }
       ]
     },
