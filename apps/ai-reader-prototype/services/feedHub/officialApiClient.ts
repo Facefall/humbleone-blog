@@ -2,6 +2,14 @@ import axios from 'axios'
 import type { FeedHubSourceConfig, RsshubData, RsshubDataItem } from './types'
 import { requestOfficialFeed } from './officialFeedClient'
 
+export const SUPPORTED_OFFICIAL_API_ADAPTERS = ['github.releases.api', 'hackernews.api.topstories'] as const
+
+export type OfficialApiAdapter = (typeof SUPPORTED_OFFICIAL_API_ADAPTERS)[number]
+
+function isOfficialApiAdapter(value: string): value is OfficialApiAdapter {
+  return (SUPPORTED_OFFICIAL_API_ADAPTERS as readonly string[]).includes(value)
+}
+
 type HackerNewsItem = {
   by?: string
   dead?: boolean
@@ -34,6 +42,10 @@ type GitHubRelease = {
 }
 
 export async function requestOfficialApiSource(config: FeedHubSourceConfig): Promise<RsshubData> {
+  if (!isOfficialApiAdapter(config.adapter)) {
+    throw new Error(`Unsupported official API adapter: ${config.adapter}`)
+  }
+
   if (config.adapter === 'hackernews.api.topstories') {
     return requestHackerNewsTopStories(config)
   }

@@ -1,17 +1,18 @@
 import type { DailySection, DailySectionKind, SourceDeskData, SourceHealth } from '../../lib/prototype-data'
 import { dailyBrief } from '../../lib/prototype-data'
-import {
-  getSourceRegistryRecord,
-  loadEffectiveSourceRegistry,
-  type EffectiveSourceRegistry,
-} from '../sourceRegistry'
+import type { EffectiveSourceRegistry } from '../sourceRegistry'
 import {
   readSourceResultsFromState,
   readStoredFeedSources,
   type StoredFeedSourcesResult,
 } from './feedHubRepository'
-import { getFeedHubSources } from './rsshubSources'
-import type { FeedHubResponse, FeedHubSourceConfig, FeedHubSourceResult, NormalizedFeedSource } from './types'
+import { getFeedHubSourceCatalog } from './sourceCatalog'
+import type {
+  FeedHubResponse,
+  FeedHubSourceConfig,
+  FeedHubSourceResult,
+  NormalizedFeedSource,
+} from './types'
 
 const defaultFeedHubLimit = 20
 const maxFeedHubLimit = 200
@@ -57,10 +58,10 @@ export async function readFeedHubProjection({
   sourceId?: string | null
 } = {}): Promise<FeedHubResponse> {
   const pagination = normalizePagination({ limit, offset })
-  const sourceRegistry = await loadEffectiveSourceRegistry()
-  const feedHubSources = getFeedHubSources(sourceRegistry)
-  const enabledFeedHubSources = feedHubSources.filter((source) => source.enabled)
-  const sourceEntries = getFeedHubSourceEntries(enabledFeedHubSources, sourceRegistry)
+  const sourceCatalog = await getFeedHubSourceCatalog()
+  const sourceRegistry = sourceCatalog.registry
+  const feedHubSources = sourceCatalog.sources
+  const sourceEntries = sourceCatalog.enabledSourceEntries
   const normalizedSourceId = sourceId?.trim()
   const filteredSourceEntries = normalizedSourceId
     ? sourceEntries.filter(({ config }) => config.sourceId === normalizedSourceId)
@@ -222,17 +223,6 @@ function normalizePagination({
     limit: normalizedLimit,
     offset: normalizedOffset,
   }
-}
-
-function getFeedHubSourceEntries(
-  feedHubSources: FeedHubSourceConfig[],
-  sourceRegistry: EffectiveSourceRegistry,
-) {
-  return feedHubSources.flatMap((config) => {
-    const registry = getSourceRegistryRecord(sourceRegistry, config.sourceId)
-
-    return registry ? [{ config, registry }] : []
-  })
 }
 
 function buildSections(sources: NormalizedFeedSource[]): DailySection[] {

@@ -1,10 +1,6 @@
 import { randomUUID } from 'node:crypto'
-import {
-  getSourceRegistryRecord,
-  loadEffectiveSourceRegistry,
-  type EffectiveSourceRegistry,
-} from '../sourceRegistry'
 import { hydrateFeedItemsWithArticleContent } from './articleContent'
+import { requestFeedSourceWithAdapters } from './adapters'
 import {
   getDueFeedHubSources,
   upsertFeedHubSourceResult,
@@ -17,11 +13,13 @@ import {
 } from '../logging/fetchRunRepository'
 import { feedHubDebug, isFeedHubDebugEnabled } from './feedHubLogger'
 import { normalizeFeedItems } from './normalize'
-import { requestOfficialApiSource } from './officialApiClient'
-import { requestOfficialFeed } from './officialFeedClient'
-import { requestRSSHubRoute } from './rsshubClient'
-import { getFeedHubSources } from './rsshubSources'
-import type { FeedHubSourceConfig, FeedHubSourceResult, NormalizedFeedSource, RsshubData } from './types'
+import { loadFeedHubSourceCatalog } from './sourceCatalog'
+import type {
+  FeedHubSourceCatalogEntry,
+  FeedHubSourceConfig,
+  FeedHubSourceResult,
+  NormalizedFeedSource,
+} from './types'
 
 export type FeedHubSyncOptions = {
   force?: boolean
@@ -39,8 +37,8 @@ export async function syncFeedHubSources({
   hydrateArticles = false,
 }: FeedHubSyncOptions = {}) {
   const fetchedAt = new Date().toISOString()
-  const sourceRegistry = await loadEffectiveSourceRegistry()
-  const feedHubSources = getFeedHubSources(sourceRegistry)
+  const sourceCatalog = await loadFeedHubSourceCatalog()
+  const feedHubSources = sourceCatalog.sources
   const dueSources = getDueFeedHubSources({
     force,
     now: new Date(fetchedAt),
@@ -60,7 +58,13 @@ export async function syncFeedHubSources({
   }, syncCorrelationId)
 
   const sourceOutputs = await Promise.all(
-    dueSources.map((source) => fetchFeedHubSource(source, sourceRegistry, triggerType, syncCorrelationId)),
+    dueSources.map((source) => {
+      const entry = sourceCatalog.sourceEntryById.get(source.sourceId)
+
+      return entry
+        ? fetchFeedHubSource(entry, triggerType, syncCorrelationId)
+        : createMissingSourceOutput(source)
+    }),
   )
   const refreshSources = sourceOutputs.flatMap((output) => output.source ?? [])
   const persistedRefreshSources = hydrateArticles
@@ -87,33 +91,13 @@ export async function syncFeedHubSources({
 }
 
 async function fetchFeedHubSource(
-  config: FeedHubSourceConfig,
-  sourceRegistry: EffectiveSourceRegistry,
+  entry: FeedHubSourceCatalogEntry,
   triggerType: FetchRunTriggerType,
   syncCorrelationId: string,
 ): Promise<FeedHubSourceSyncOutput> {
+  const { config, registry } = entry
   const startedAt = new Date().toISOString()
   const startedMs = Date.now()
-  const registry = getSourceRegistryRecord(sourceRegistry, config.sourceId)
-
-  if (!registry) {
-    return {
-      config,
-      result: {
-        endpoint: config.endpoint,
-        fetchMethod: config.fetchMethod,
-        sourceId: config.sourceId,
-        rsshubRoute: config.rsshubRoute,
-        itemCount: 0,
-        normalizedItemCount: 0,
-        rawItemCount: 0,
-        upstreamItemCount: 0,
-        fetchedItemCount: 0,
-        status: 'failed',
-        error: 'Source registry record is missing.',
-      },
-    }
-  }
 
   const fetchRunId = createFetchRun({
     endpoint: config.endpoint,
@@ -133,7 +117,7 @@ async function fetchFeedHubSource(
       fetchRunId,
     }, syncCorrelationId)
 
-    const data = await requestFeedHubSource(config)
+    const data = await requestFeedSourceWithAdapters(config)
     const rawItemCount = data.item?.length ?? 0
 
     feedHubDebug(`Feed Hub response for ${config.sourceId}`, {
@@ -243,6 +227,25 @@ async function fetchFeedHubSource(
   }
 }
 
+function createMissingSourceOutput(config: FeedHubSourceConfig): FeedHubSourceSyncOutput {
+  return {
+    config,
+    result: {
+      endpoint: config.endpoint,
+      fetchMethod: config.fetchMethod,
+      sourceId: config.sourceId,
+      rsshubRoute: config.rsshubRoute,
+      itemCount: 0,
+      normalizedItemCount: 0,
+      rawItemCount: 0,
+      upstreamItemCount: 0,
+      fetchedItemCount: 0,
+      status: 'failed',
+      error: 'Source catalog entry is missing.',
+    },
+  }
+}
+
 function resolveFetchTriggerType(force: boolean): FetchRunTriggerType {
   if (isFeedHubDebugEnabled()) {
     return 'debug'
@@ -253,22 +256,6 @@ function resolveFetchTriggerType(force: boolean): FetchRunTriggerType {
   }
 
   return 'scheduled'
-}
-
-async function requestFeedHubSource(config: FeedHubSourceConfig): Promise<RsshubData> {
-  if (config.fetchMethod === 'rsshub') {
-    return requestRSSHubRoute(config.rsshubRoute)
-  }
-
-  if (config.fetchMethod === 'official_rss') {
-    return requestOfficialFeed(config.endpoint)
-  }
-
-  if (config.fetchMethod === 'official_api') {
-    return requestOfficialApiSource(config)
-  }
-
-  throw new Error(`Unsupported Feed Hub fetch method: ${config.fetchMethod}`)
 }
 
 async function hydrateNormalizedFeedSources(sources: NormalizedFeedSource[]) {

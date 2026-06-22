@@ -1,4 +1,5 @@
 import type { RsshubData } from './types'
+import rsshub from 'rsshub';
 
 type RSSHubModule = {
   init: (config?: Record<string, string | undefined>) => Promise<void>
@@ -14,12 +15,41 @@ async function loadRSSHub() {
   return rsshubModulePromise
 }
 
-export async function requestRSSHubRoute(path: string) {
+export function buildRSSHubRequestPath(route: string) {
+  const trimmedRoute = route.trim()
+
+  if (!trimmedRoute) {
+    throw new Error('RSSHub route is required.')
+  }
+
+  const parsed = parseRSSHubRoute(trimmedRoute)
+  const path = ensureLeadingSlash(parsed.pathname)
+  const queryEntries = Array.from(parsed.searchParams.entries())
+  const query = queryEntries.map(([name, value]) => `${encodeURIComponent(name)}=${encodeURIComponent(value)}`).join('&')
+
+  return `${path}${query ? `?${query}` : ''}`
+}
+
+function parseRSSHubRoute(route: string) {
+  const parsed = route.startsWith('http://') || route.startsWith('https://')
+    ? new URL(route)
+    : new URL(route, 'https://rsshub.internal')
+
+  return parsed
+}
+
+function ensureLeadingSlash(path: string) {
+  const normalizedPath = path.trim() || '/'
+  return normalizedPath.startsWith('/') ? normalizedPath : `/${normalizedPath}`
+}
+
+export async function requestRSSHubRoute(route: string) {
+  const requestPath = buildRSSHubRequestPath(route)
   const rsshub = await loadRSSHub()
 
   await ensureRSSHubInitialized(rsshub)
 
-  return rsshub.request(path)
+  return rsshub.request(requestPath)
 }
 
 function getRSSHubInitConfig() {

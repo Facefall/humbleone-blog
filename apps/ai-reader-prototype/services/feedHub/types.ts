@@ -74,3 +74,8 @@ export type NormalizedFeedSource = {
   registry: SourceRegistryRecord
   items: FeedItem[]
 }
+
+export type FeedHubSourceCatalogEntry = {
+  config: FeedHubSourceConfig
+  registry: SourceRegistryRecord
+}

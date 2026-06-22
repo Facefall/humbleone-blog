@@ -1,6 +1,9 @@
-import { dailyBrief } from '../../../../lib/prototype-data'
 import { refreshFeedHubBrief } from '../../../../services/feedHub'
-import type { FeedHubResponse } from '../../../../services/feedHub/types'
+import {
+  createEmptyPageInfo,
+  createFeedHubFallbackResponse,
+  jsonResponse,
+} from '../routeSupport'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -23,32 +26,13 @@ async function handleSchedulerRequest(request: Request) {
 
     return jsonResponse(response)
   } catch (error) {
-    return jsonResponse({
-      mode: 'fallback',
-      fetchedAt: new Date().toISOString(),
-      brief: dailyBrief,
-      pageInfo: emptyPageInfo,
-      sourceResults: [
-        {
-          endpoint: 'feed-hub-scheduler',
-          fetchMethod: 'manual',
-          sourceId: 'feed-hub-scheduler',
-          rsshubRoute: 'rsshub-package',
-          itemCount: 0,
-          status: 'failed',
-          error: error instanceof Error ? error.message : String(error),
-        },
-      ],
-    })
+    return jsonResponse(createFeedHubFallbackResponse({
+      endpoint: 'feed-hub-scheduler',
+      error,
+      pageInfo: createEmptyPageInfo(0),
+      sourceId: 'feed-hub-scheduler',
+    }))
   }
-}
-
-const emptyPageInfo = {
-  hasMore: false,
-  limit: 0,
-  offset: 0,
-  returnedCount: 0,
-  totalCount: 0,
 }
 
 function isSchedulerAuthorized(request: Request) {
@@ -68,15 +52,4 @@ function readBearerToken(request: Request) {
   const match = authorization?.match(/^Bearer\s+(.+)$/i)
 
   return match?.[1]?.trim()
-}
-
-function jsonResponse(value: FeedHubResponse | { error: string }, init?: ResponseInit) {
-  return new Response(JSON.stringify(value), {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'no-store',
-      ...init?.headers,
-    },
-  })
 }
